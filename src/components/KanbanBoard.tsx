@@ -1,31 +1,42 @@
 import { useState } from "react";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
 import { Plus, Archive, XCircle, CheckCircle2, Filter } from "lucide-react";
 import { PatientCard } from "./PatientCard";
 import { PatientFormModal } from "./PatientFormModal";
 import { ArchiveBox } from "./ArchiveBox";
 import { Patient } from "@/types/patient";
+import logo from "@/assets/logo.png";
 
 interface KanbanBoardProps {
   patients: Patient[];
-  onCreatePatient: (patient: Omit<Patient, 'id' | 'createdAt' | 'movedAt'>) => void;
-  onMovePatient: (patientId: string, newStatus: Patient['status']) => void;
-  onArchivePatient: (patientId: string, archiveType: 'terminated' | 'no_response') => void;
+  onCreatePatient: (
+    patient: Omit<Patient, "id" | "createdAt" | "movedAt">
+  ) => void;
+  onMovePatient: (patientId: string, newStatus: Patient["status"]) => void;
+  onArchivePatient: (
+    patientId: string,
+    archiveType: "terminated" | "no_response"
+  ) => void;
 }
 
-export function KanbanBoard({ 
-  patients, 
-  onCreatePatient, 
-  onMovePatient, 
-  onArchivePatient 
+export function KanbanBoard({
+  patients,
+  onCreatePatient,
+  onMovePatient,
+  onArchivePatient,
 }: KanbanBoardProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
+  const [sortBy, setSortBy] = useState<"date" | "name">("date");
 
   const sortPatients = (patientList: Patient[]) => {
     return [...patientList].sort((a, b) => {
-      if (sortBy === 'name') {
+      if (sortBy === "name") {
         return a.name.localeCompare(b.name);
       }
       // Default: sort by date (oldest first)
@@ -33,10 +44,18 @@ export function KanbanBoard({
     });
   };
 
-  const sentPatients = sortPatients(patients.filter(p => p.status === 'sent'));
-  const remindedPatients = sortPatients(patients.filter(p => p.status === 'reminded'));
-  const terminatedCount = patients.filter(p => p.status === 'terminated').length;
-  const noResponseCount = patients.filter(p => p.status === 'no_response').length;
+  const sentPatients = sortPatients(
+    patients.filter((p) => p.status === "sent")
+  );
+  const remindedPatients = sortPatients(
+    patients.filter((p) => p.status === "reminded")
+  );
+  const terminatedCount = patients.filter(
+    (p) => p.status === "terminated"
+  ).length;
+  const noResponseCount = patients.filter(
+    (p) => p.status === "no_response"
+  ).length;
 
   const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -44,49 +63,56 @@ export function KanbanBoard({
     if (!destination) return;
 
     // Handle archive drops
-    if (destination.droppableId === 'archive-terminated') {
-      onArchivePatient(draggableId, 'terminated');
+    if (destination.droppableId === "archive-terminated") {
+      onArchivePatient(draggableId, "terminated");
       return;
     }
-    
-    if (destination.droppableId === 'archive-no-response') {
-      onArchivePatient(draggableId, 'no_response');
+
+    if (destination.droppableId === "archive-no-response") {
+      onArchivePatient(draggableId, "no_response");
       return;
     }
 
     // Handle column moves
     if (source.droppableId !== destination.droppableId) {
-      const newStatus = destination.droppableId as Patient['status'];
+      const newStatus = destination.droppableId as Patient["status"];
       onMovePatient(draggableId, newStatus);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-background p-6 overflow-hidden">
       <DragDropContext onDragEnd={onDragEnd}>
         {/* Header */}
         <header className="mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                Zahnarztpraxis CRM
-              </h1>
-              <p className="text-muted-foreground">
-                Patientenverwaltung mit Kanban-System
-              </p>
+            <div className="flex items-center gap-4">
+              <img
+                src={logo}
+                alt="Logo"
+                className="h-16 w-16 object-contain rounded bg-white shadow"
+              />
+              <div>
+                <h1 className="lg:text-3xl text-xl font-bold text-foreground mb-2">
+                  Zahnarztpraxis Dr. Leue
+                </h1>
+                <p className="text-muted-foreground">
+                  Kostenvoranschlag Übersicht
+                </p>
+              </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSortBy(sortBy === 'date' ? 'name' : 'date')}
+                onClick={() => setSortBy(sortBy === "date" ? "name" : "date")}
                 className="bg-card hover:bg-accent"
               >
                 <Filter className="h-4 w-4 mr-2" />
-                {sortBy === 'date' ? 'Nach Datum' : 'Nach Name'}
+                {sortBy === "date" ? "Nach Datum" : "Nach Name"}
               </Button>
-              
+
               <Button
                 onClick={() => setIsFormOpen(true)}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
@@ -111,14 +137,14 @@ export function KanbanBoard({
                     {sentPatients.length}
                   </span>
                 </h2>
-                
+
                 <Droppable droppableId="sent">
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={`space-y-3 min-h-[200px] transition-colors ${
-                        snapshot.isDraggingOver ? 'bg-accent/20' : ''
+                        snapshot.isDraggingOver ? "bg-accent/20" : ""
                       }`}
                     >
                       {sentPatients.map((patient, index) => (
@@ -133,7 +159,7 @@ export function KanbanBoard({
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               className={`transition-transform ${
-                                snapshot.isDragging ? 'rotate-2 scale-105' : ''
+                                snapshot.isDragging ? "rotate-2 scale-105" : ""
                               }`}
                             >
                               <PatientCard patient={patient} />
@@ -157,14 +183,14 @@ export function KanbanBoard({
                     {remindedPatients.length}
                   </span>
                 </h2>
-                
+
                 <Droppable droppableId="reminded">
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={`space-y-3 min-h-[200px] transition-colors ${
-                        snapshot.isDraggingOver ? 'bg-accent/20' : ''
+                        snapshot.isDraggingOver ? "bg-accent/20" : ""
                       }`}
                     >
                       {remindedPatients.map((patient, index) => (
@@ -179,7 +205,7 @@ export function KanbanBoard({
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               className={`transition-transform ${
-                                snapshot.isDragging ? 'rotate-2 scale-105' : ''
+                                snapshot.isDragging ? "rotate-2 scale-105" : ""
                               }`}
                             >
                               <PatientCard patient={patient} />
@@ -204,7 +230,7 @@ export function KanbanBoard({
               icon={CheckCircle2}
               variant="success"
             />
-            
+
             <ArchiveBox
               id="archive-no-response"
               title="Keine Rückmeldung"
