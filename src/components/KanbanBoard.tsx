@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "@/components/ui/use-toast";
 import {
   DragDropContext,
   Droppable,
@@ -33,6 +34,11 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [sortBy, setSortBy] = useState<"date" | "name">("date");
+  const [lastArchived, setLastArchived] = useState<{
+    patient: Patient;
+    prevStatus: Patient["status"];
+    archiveType: "terminated" | "no_response";
+  } | null>(null);
 
   const sortPatients = (patientList: Patient[]) => {
     return [...patientList].sort((a, b) => {
@@ -64,12 +70,12 @@ export function KanbanBoard({
 
     // Handle archive drops
     if (destination.droppableId === "archive-terminated") {
-      onArchivePatient(draggableId, "terminated");
+      handleArchivePatient(draggableId, "terminated");
       return;
     }
 
     if (destination.droppableId === "archive-no-response") {
-      onArchivePatient(draggableId, "no_response");
+      handleArchivePatient(draggableId, "no_response");
       return;
     }
 
@@ -78,6 +84,35 @@ export function KanbanBoard({
       const newStatus = destination.droppableId as Patient["status"];
       onMovePatient(draggableId, newStatus);
     }
+  };
+
+  const handleArchivePatient = (
+    patientId: string,
+    archiveType: "terminated" | "no_response"
+  ) => {
+    const patient = patients.find((p) => p.id === patientId);
+    if (!patient) return;
+    const archived = { patient, prevStatus: patient.status, archiveType };
+    setLastArchived(archived);
+    onArchivePatient(patientId, archiveType);
+
+    // Show the toast and get its controller object
+    const toastController = toast({
+      title: "Archiviert",
+      description: `${patient.name} wurde archiviert.`,
+      action: (
+        <button
+          onClick={() => {
+            onMovePatient(archived.patient.id, archived.prevStatus);
+            toastController.dismiss(); // Dismiss the toast after undo
+          }}
+          className="ml-4 underline text-primary"
+        >
+          Rückgängig
+        </button>
+      ),
+      duration: 3000,
+    });
   };
 
   return (
@@ -93,7 +128,7 @@ export function KanbanBoard({
                 className="h-16 w-16 object-contain rounded bg-white shadow"
               />
               <div>
-                <h1 className="lg:text-3xl text-xl font-bold text-foreground mb-2">
+                <h1 className="lg:text-2xl text-xl font-bold text-foreground mb-2">
                   Zahnarztpraxis Dr. Leue
                 </h1>
                 <p className="text-muted-foreground">

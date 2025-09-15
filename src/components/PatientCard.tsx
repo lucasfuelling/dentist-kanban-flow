@@ -1,4 +1,4 @@
-import { FileText, Mail, Calendar } from "lucide-react";
+import { FileText, Mail, Calendar, BellRing, MoveRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Patient } from "@/types/patient";
 
@@ -14,10 +14,11 @@ export function PatientCard({ patient }: PatientCardProps) {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const relevantDate = patient.status === 'reminded' && patient.movedAt 
-    ? patient.movedAt 
-    : patient.createdAt;
-  
+  const relevantDate =
+    patient.status === "reminded" && patient.movedAt
+      ? patient.movedAt
+      : patient.createdAt;
+
   const daysSince = calculateDaysSince(relevantDate);
 
   return (
@@ -34,10 +35,10 @@ export function PatientCard({ patient }: PatientCardProps) {
             </div>
           )}
         </div>
-        
+
         <div className="flex flex-col items-end gap-1 ml-2">
           <div className="bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap">
-            {daysSince} Tag{daysSince !== 1 ? 'e' : ''}
+            {daysSince} Tag{daysSince !== 1 ? "e" : ""}
           </div>
         </div>
       </div>
@@ -45,26 +46,33 @@ export function PatientCard({ patient }: PatientCardProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center text-muted-foreground text-xs">
           <Calendar className="h-3 w-3 mr-1" />
-          <span>
-            {new Date(patient.createdAt).toLocaleDateString('de-DE')}
-          </span>
+          <span>{new Date(patient.createdAt).toLocaleDateString("de-DE")}</span>
+          {patient.status === "reminded" && patient.movedAt && (
+            <>
+              <MoveRight className="h-3 w-3 mx-2 text-muted-foreground" />
+              <BellRing className="h-3 w-3 mr-1" />
+              <span>
+                {new Date(patient.movedAt).toLocaleDateString("de-DE")}
+              </span>
+            </>
+          )}
         </div>
-        
+
         {patient.pdfFile && (
           <div className="flex items-center text-primary text-xs">
             <FileText className="h-3 w-3 mr-1" />
-            <span className="truncate max-w-[80px]">
+            <a
+              href={URL.createObjectURL(patient.pdfFile)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="truncate max-w-[80px] underline hover:text-primary/80"
+              onClick={(e) => e.stopPropagation()} // Prevents drag if needed
+            >
               {patient.pdfFile.name}
-            </span>
+            </a>
           </div>
         )}
       </div>
-      
-      {patient.status === 'reminded' && patient.movedAt && (
-        <div className="mt-2 text-xs text-muted-foreground border-t pt-2">
-          Erinnert am: {new Date(patient.movedAt).toLocaleDateString('de-DE')}
-        </div>
-      )}
     </Card>
   );
 }
