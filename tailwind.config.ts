@@ -22,6 +22,7 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          glow: "hsl(var(--primary-glow))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -30,6 +31,7 @@ export default {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+          light: "hsl(var(--destructive-light))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -46,6 +48,26 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+          light: "hsl(var(--success-light))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        kanban: {
+          column: "hsl(var(--kanban-column))",
+          card: "hsl(var(--kanban-card))",
+          "card-hover": "hsl(var(--kanban-card-hover))",
+        },
+        archive: {
+          success: "hsl(var(--archive-success))",
+          "success-bg": "hsl(var(--archive-success-bg))",
+          error: "hsl(var(--archive-error))",
+          "error-bg": "hsl(var(--archive-error-bg))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
