@@ -15,15 +15,18 @@ const Index = () => {
   const [realtimeChannel, setRealtimeChannel] = useState<RealtimeChannel | null>(null);
 
   // Convert database row to Patient object
-  const formatPatient = useCallback((row: any): Patient => ({
-    id: row.patient_id.toString(),
-    name: row.first_name ? `${row.first_name} ${row.last_name}` : row.last_name,
-    email: row.email || undefined,
-    status: row.status as Patient["status"],
-    createdAt: row.date_created,
-    movedAt: row.date_reminded || undefined,
-    pdfFile: row.pdf_file_path ? { name: row.pdf_file_path.split('/').pop() || 'Document.pdf' } : undefined
-  }), []);
+  const formatPatient = useCallback((row: any): Patient => {
+    console.log('Formatting patient:', row);
+    return {
+      id: row.patient_id?.toString() || row.id?.toString() || 'temp-id',
+      name: row.first_name ? `${row.first_name} ${row.last_name}` : row.last_name,
+      email: row.email || undefined,
+      status: row.status as Patient["status"],
+      createdAt: row.date_created,
+      movedAt: row.date_reminded || undefined,
+      pdfFile: row.pdf_file_path ? { name: row.pdf_file_path.split('/').pop() || 'Document.pdf' } : undefined
+    };
+  }, []);
 
   // Load patients from Supabase
   const loadPatients = useCallback(async () => {
@@ -73,8 +76,15 @@ const Index = () => {
           
           switch (payload.eventType) {
             case 'INSERT':
+              console.log('INSERT payload:', payload.new);
               const newPatient = formatPatient(payload.new);
-              setPatients(prev => [...prev, newPatient]);
+              console.log('Formatted new patient:', newPatient);
+              setPatients(prev => {
+                console.log('Previous patients:', prev);
+                const updated = [...prev, newPatient];
+                console.log('Updated patients:', updated);
+                return updated;
+              });
               break;
               
             case 'UPDATE':
