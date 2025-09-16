@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { Patient } from "@/types/patient";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,14 +6,27 @@ import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 const Index = () => {
   const { user, signOut } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [realtimeChannel, setRealtimeChannel] = useState<RealtimeChannel | null>(null);
+
+  // Convert database row to Patient object
+  const formatPatient = useCallback((row: any): Patient => ({
+    id: row.patient_id.toString(),
+    name: row.first_name ? `${row.first_name} ${row.last_name}` : row.last_name,
+    email: row.email || undefined,
+    status: row.status as Patient["status"],
+    createdAt: row.date_created,
+    movedAt: row.date_reminded || undefined,
+    pdfFile: row.pdf_file_path ? { name: row.pdf_file_path.split('/').pop() || 'Document.pdf' } : undefined
+  }), []);
 
   // Load patients from Supabase
-  const loadPatients = async () => {
+  const loadPatients = useCallback(async () => {
     if (!user?.id) return;
 
     try {
@@ -27,18 +40,7 @@ const Index = () => {
         throw error;
       }
 
-      const formattedPatients: Patient[] = data.map(row => {
-        return {
-          id: row.patient_id.toString(),
-          name: row.first_name ? `${row.first_name} ${row.last_name}` : row.last_name,
-          email: row.email || undefined,
-          status: row.status as Patient["status"],
-          createdAt: row.date_created,
-          movedAt: row.date_reminded || undefined,
-          pdfFile: row.pdf_file_path ? { name: row.pdf_file_path.split('/').pop() || 'Document.pdf' } : undefined
-        };
-      });
-
+      const formattedPatients: Patient[] = data.map(formatPatient);
       setPatients(formattedPatients);
     } catch (error) {
       console.error('Error loading patients:', error);
@@ -50,26 +52,93 @@ const Index = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, formatPatient]);
 
+  // Setup real-time subscription
+  const setupRealtimeSubscription = useCallback(() => {
+    if (!user?.id || realtimeChannel) return;
+
+    const channel = supabase
+      .channel('patient-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'data',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Real-time update:', payload);
+          
+          switch (payload.eventType) {
+            case 'INSERT':
+              const newPatient = formatPatient(payload.new);
+              setPatients(prev => [...prev, newPatient]);
+              break;
+              
+            case 'UPDATE':
+              const updatedPatient = formatPatient(payload.new);
+              setPatients(prev => prev.map(p => 
+                p.id === updatedPatient.id ? updatedPatient : p
+              ));
+              break;
+              
+            case 'DELETE':
+              const deletedId = payload.old.patient_id.toString();
+              setPatients(prev => prev.filter(p => p.id !== deletedId));
+              break;
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
+
+    setRealtimeChannel(channel);
+  }, [user?.id, realtimeChannel, formatPatient]);
+
+  // Load initial data and setup realtime
   useEffect(() => {
     loadPatients();
-  }, [user?.id]);
+    setupRealtimeSubscription();
 
-  const handleCreatePatient = () => {
-    loadPatients(); // Refresh data after creating patient
-  };
+    // Cleanup subscription on unmount
+    return () => {
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
+    };
+  }, [loadPatients, setupRealtimeSubscription, realtimeChannel]);
 
-  const handleMovePatient = async (
+  const handleCreatePatient = useCallback(() => {
+    // Real-time subscription will handle the new patient update
+    // No need to manually refresh here
+  }, []);
+
+  // Optimistic UI update for moving patients
+  const handleMovePatient = useCallback(async (
     patientId: string,
     newStatus: Patient["status"]
   ) => {
     if (!user?.id) return;
 
+    // Optimistic update - immediately update local state
+    const optimisticUpdate = {
+      status: newStatus,
+      movedAt: newStatus === "reminded" ? new Date().toISOString() : undefined
+    };
+
+    setPatients(prev => prev.map(patient => 
+      patient.id === patientId 
+        ? { ...patient, ...optimisticUpdate }
+        : patient
+    ));
+
+    // Background database update
     try {
       const updates: any = { status: newStatus };
       
-      // Update reminded timestamp when moving to "reminded"
       if (newStatus === "reminded") {
         updates.date_reminded = new Date().toISOString();
       }
@@ -81,22 +150,15 @@ const Index = () => {
         .eq('user_id', user.id);
 
       if (error) {
+        // Revert optimistic update on error
+        setPatients(prev => prev.map(patient => 
+          patient.id === patientId 
+            ? { ...patient, status: patient.status, movedAt: patient.movedAt }
+            : patient
+        ));
+        
         throw error;
       }
-
-      // Update local state
-      setPatients((prev) =>
-        prev.map((patient) => {
-          if (patient.id === patientId) {
-            const localUpdates: Partial<Patient> = { status: newStatus };
-            if (newStatus === "reminded") {
-              localUpdates.movedAt = new Date().toISOString();
-            }
-            return { ...patient, ...localUpdates };
-          }
-          return patient;
-        })
-      );
     } catch (error) {
       console.error('Error updating patient:', error);
       toast({
@@ -105,19 +167,28 @@ const Index = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [user?.id]);
 
-  const handleArchivePatient = async (
+  // Optimistic UI update for archiving patients
+  const handleArchivePatient = useCallback(async (
     patientId: string,
     archiveType: "terminated" | "no_response"
   ) => {
     if (!user?.id) return;
 
+    // Optimistic update - immediately update local state
+    setPatients(prev => prev.map(patient =>
+      patient.id === patientId 
+        ? { ...patient, status: archiveType }
+        : patient
+    ));
+
+    // Background database update
     try {
       const { error } = await supabase
         .from('data')
         .update({ 
-          status: archiveType as any, // Cast to handle enum update
+          status: archiveType as any,
           archive_status: 'archived',
           date_archived: new Date().toISOString()
         })
@@ -125,15 +196,15 @@ const Index = () => {
         .eq('user_id', user.id);
 
       if (error) {
+        // Revert optimistic update on error
+        setPatients(prev => prev.map(patient =>
+          patient.id === patientId 
+            ? { ...patient, status: patient.status }
+            : patient
+        ));
+        
         throw error;
       }
-
-      // Update local state
-      setPatients((prev) =>
-        prev.map((patient) =>
-          patient.id === patientId ? { ...patient, status: archiveType } : patient
-        )
-      );
     } catch (error) {
       console.error('Error archiving patient:', error);
       toast({
@@ -142,10 +213,16 @@ const Index = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [user?.id]);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
+      // Cleanup realtime subscription before signing out
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+        setRealtimeChannel(null);
+      }
+      
       await signOut();
       toast({
         title: "Signed out successfully",
@@ -158,7 +235,7 @@ const Index = () => {
         description: "There was a problem signing you out.",
       });
     }
-  };
+  }, [signOut, realtimeChannel]);
 
   return (
     <div className="min-h-screen bg-background">
