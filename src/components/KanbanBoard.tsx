@@ -153,7 +153,7 @@ export function KanbanBoard({
                 className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Neuen Patient anlegen
+                Neuer Patient
               </Button>
             </div>
           </div>
