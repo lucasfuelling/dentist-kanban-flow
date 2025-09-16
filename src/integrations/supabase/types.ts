@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      data: {
+        Row: {
+          appointment_made: boolean | null
+          archive_status: Database["public"]["Enums"]["Archive"]
+          date_archived: string | null
+          date_created: string
+          date_reminded: string | null
+          email: string | null
+          first_name: string | null
+          last_name: string
+          patient_id: number
+          pdf_file_path: string | null
+        }
+        Insert: {
+          appointment_made?: boolean | null
+          archive_status?: Database["public"]["Enums"]["Archive"]
+          date_archived?: string | null
+          date_created?: string
+          date_reminded?: string | null
+          email?: string | null
+          first_name?: string | null
+          last_name: string
+          patient_id?: number
+          pdf_file_path?: string | null
+        }
+        Update: {
+          appointment_made?: boolean | null
+          archive_status?: Database["public"]["Enums"]["Archive"]
+          date_archived?: string | null
+          date_created?: string
+          date_reminded?: string | null
+          email?: string | null
+          first_name?: string | null
+          last_name?: string
+          patient_id?: number
+          pdf_file_path?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +61,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      Archive: "archived" | "not_archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +188,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      Archive: ["archived", "not_archived"],
+    },
   },
 } as const
