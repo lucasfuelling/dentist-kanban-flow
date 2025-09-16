@@ -61,10 +61,10 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
-            Kostenvoranschlag APP
+            Kostenvoranschlag System
           </CardTitle>
           <CardDescription className="text-center">
-            Melden Sie sich an
+            Zahnarztpraxis Dr. Leue
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -74,7 +74,7 @@ const Auth = () => {
               <Input
                 id="login-email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="user@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -86,7 +86,7 @@ const Auth = () => {
                 <Input
                   id="login-password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Bitte Passwort eingeben"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
