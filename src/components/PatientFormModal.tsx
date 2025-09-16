@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, X, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePatients } from "@/hooks/usePatients";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PatientFormModalProps {
   isOpen: boolean;
@@ -17,11 +19,13 @@ interface PatientFormModalProps {
 }
 
 export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModalProps) {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { insertPatient, loading } = usePatients();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -51,10 +55,19 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim()) {
+    if (!firstName.trim() || !lastName.trim()) {
       toast({
-        title: "Name erforderlich",
-        description: "Bitte geben Sie einen Namen ein.",
+        title: "Felder erforderlich",
+        description: "Bitte geben Sie Vor- und Nachname ein.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!email.trim()) {
+      toast({
+        title: "E-Mail erforderlich",
+        description: "Bitte geben Sie eine E-Mail-Adresse ein.",
         variant: "destructive",
       });
       return;
@@ -63,26 +76,58 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
     setIsSubmitting(true);
 
     try {
-      await onSubmit({
-        name: name.trim(),
-        email: email.trim() || undefined,
-        pdfFile: pdfFile || undefined,
+      let pdfFilePath: string | undefined;
+
+      // Upload PDF file to Supabase storage if provided
+      if (pdfFile) {
+        const fileName = `${Date.now()}_${pdfFile.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('Cost_estimates')
+          .upload(fileName, pdfFile);
+
+        if (uploadError) {
+          console.error('File upload error:', uploadError);
+          toast({
+            title: "Upload-Fehler",
+            description: "Fehler beim Hochladen der PDF-Datei: " + uploadError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        pdfFilePath = uploadData.path;
+      }
+
+      // Insert patient into database
+      const result = await insertPatient({
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        email: email.trim(),
+        pdf_file_path: pdfFilePath,
+        archive_status: 'not_archived',
+        appointment_made: false,
       });
 
-      // Reset form
-      setName("");
-      setEmail("");
-      setPdfFile(null);
-      onClose();
+      if (result.success) {
+        // Also call the original onSubmit for local state update
+        onSubmit({
+          name: `${firstName.trim()} ${lastName.trim()}`,
+          email: email.trim() || undefined,
+          pdfFile: pdfFile || undefined,
+        });
 
-      toast({
-        title: "Patient erstellt",
-        description: "Der Patient wurde erfolgreich angelegt.",
-      });
+        // Reset form
+        setFirstName("");
+        setLastName("");
+        setEmail("");
+        setPdfFile(null);
+        onClose();
+      }
     } catch (error) {
+      console.error('Submission error:', error);
       toast({
         title: "Fehler",
-        description: "Beim Erstellen des Patienten ist ein Fehler aufgetreten.",
+        description: "Beim Erstellen des Patienten ist ein unerwarteter Fehler aufgetreten.",
         variant: "destructive",
       });
     } finally {
@@ -91,8 +136,9 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
   };
 
   const handleClose = () => {
-    if (!isSubmitting) {
-      setName("");
+    if (!isSubmitting && !loading) {
+      setFirstName("");
+      setLastName("");
       setEmail("");
       setPdfFile(null);
       onClose();
@@ -106,29 +152,48 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
           <DialogTitle className="text-xl font-semibold">
             Neuen Patient anlegen
           </DialogTitle>
+          <DialogDescription>
+            Geben Sie die Patientendaten ein, um einen neuen Eintrag zu erstellen.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium">
-                Name *
+              <Label htmlFor="firstName" className="text-sm font-medium">
+                Vorname *
               </Label>
               <Input
-                id="name"
+                id="firstName"
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Vorname Nachname"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Vorname"
                 className="w-full"
-                disabled={isSubmitting}
+                disabled={isSubmitting || loading}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lastName" className="text-sm font-medium">
+                Nachname *
+              </Label>
+              <Input
+                id="lastName"
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Nachname"
+                className="w-full"
+                disabled={isSubmitting || loading}
                 required
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
-                E-Mail (optional)
+                E-Mail *
               </Label>
               <Input
                 id="email"
@@ -137,7 +202,8 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="patient@example.com"
                 className="w-full"
-                disabled={isSubmitting}
+                disabled={isSubmitting || loading}
+                required
               />
             </div>
 
@@ -154,7 +220,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
                     onChange={handleFileChange}
                     className="hidden"
                     id="pdf-upload"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || loading}
                   />
                   <label
                     htmlFor="pdf-upload"
@@ -183,7 +249,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
                     variant="ghost"
                     size="sm"
                     onClick={() => setPdfFile(null)}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || loading}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -197,16 +263,16 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isSubmitting}
+              disabled={isSubmitting || loading}
             >
               Abbrechen
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !name.trim()}
+              disabled={isSubmitting || loading || !firstName.trim() || !lastName.trim() || !email.trim()}
               className="bg-primary hover:bg-primary/90"
             >
-              {isSubmitting ? "Wird erstellt..." : "Patient anlegen"}
+              {isSubmitting || loading ? "Wird erstellt..." : "Patient anlegen"}
             </Button>
           </div>
         </form>
