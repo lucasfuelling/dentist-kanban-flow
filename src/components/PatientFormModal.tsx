@@ -10,11 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, X, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface PatientFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (patient: { name: string; email?: string; pdfFile?: File }) => void;
+  onSubmit: () => void;
 }
 
 export function PatientFormModal({
@@ -28,6 +30,7 @@ export function PatientFormModal({
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,16 +70,59 @@ export function PatientFormModal({
       return;
     }
 
+    if (!user?.id) {
+      toast({
+        title: "Authentifizierung erforderlich",
+        description: "Sie müssen angemeldet sein, um einen Patienten anzulegen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      await onSubmit({
-        name: firstName.trim()
-          ? `${firstName.trim()} ${lastName.trim()}`
-          : lastName.trim(),
-        email: email.trim() || undefined,
-        pdfFile: pdfFile || undefined,
-      });
+      let pdfFilePath: string | undefined;
+
+      // Upload PDF file if provided
+      if (pdfFile) {
+        const fileExt = pdfFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('Cost_estimates')
+          .upload(filePath, pdfFile);
+
+        if (uploadError) {
+          throw new Error(`Datei-Upload fehlgeschlagen: ${uploadError.message}`);
+        }
+
+        pdfFilePath = filePath;
+      }
+
+      // Insert patient data into database
+      const { error: insertError } = await supabase
+        .from('data')
+        .insert({
+          user_id: user.id,
+          first_name: firstName.trim() || null,
+          last_name: lastName.trim(),
+          email: email.trim() || null,
+          pdf_file_path: pdfFilePath || null,
+          status: 'sent',
+          archive_status: 'not_archived'
+        });
+
+      if (insertError) {
+        // If database insert fails, clean up uploaded file
+        if (pdfFilePath) {
+          await supabase.storage
+            .from('Cost_estimates')
+            .remove([pdfFilePath]);
+        }
+        throw new Error(`Datenbank-Fehler: ${insertError.message}`);
+      }
 
       // Reset form
       setFirstName("");
@@ -84,15 +130,17 @@ export function PatientFormModal({
       setEmail("");
       setPdfFile(null);
       onClose();
+      onSubmit(); // Trigger data refresh
 
       toast({
         title: "Patient erstellt",
         description: "Der Patient wurde erfolgreich angelegt.",
       });
     } catch (error) {
+      console.error('Error creating patient:', error);
       toast({
         title: "Fehler",
-        description: "Beim Erstellen des Patienten ist ein Fehler aufgetreten.",
+        description: error instanceof Error ? error.message : "Beim Erstellen des Patienten ist ein Fehler aufgetreten.",
         variant: "destructive",
       });
     } finally {
