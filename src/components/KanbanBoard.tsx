@@ -11,6 +11,7 @@ import { Plus, Archive, XCircle, CheckCircle2, Filter } from "lucide-react";
 import { PatientCard } from "./PatientCard";
 import { PatientFormModal } from "./PatientFormModal";
 import { ArchiveBox } from "./ArchiveBox";
+import { LogoutButton } from "./LogoutButton";
 import { Patient } from "@/types/patient";
 import logo from "@/assets/logo.png";
 
@@ -138,6 +139,8 @@ export function KanbanBoard({
             </div>
 
             <div className="flex items-center gap-4">
+              <LogoutButton />
+              
               <Button
                 variant="outline"
                 size="sm"
