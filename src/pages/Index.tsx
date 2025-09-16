@@ -28,21 +28,11 @@ const Index = () => {
       }
 
       const formattedPatients: Patient[] = data.map(row => {
-        // Map database status to Patient status
-        let patientStatus: Patient["status"] = row.status as Patient["status"];
-        
-        // Handle archived patients
-        if (row.archive_status === 'archived') {
-          if (row.status === 'terminated' || row.status === 'no_response') {
-            patientStatus = row.status as Patient["status"];
-          }
-        }
-
         return {
           id: row.patient_id.toString(),
           name: row.first_name ? `${row.first_name} ${row.last_name}` : row.last_name,
           email: row.email || undefined,
-          status: patientStatus,
+          status: row.status as Patient["status"],
           createdAt: row.date_created,
           movedAt: row.date_reminded || undefined,
           pdfFile: row.pdf_file_path ? { name: row.pdf_file_path.split('/').pop() || 'Document.pdf' } : undefined
@@ -127,7 +117,7 @@ const Index = () => {
       const { error } = await supabase
         .from('data')
         .update({ 
-          status: archiveType,
+          status: archiveType as any, // Cast to handle enum update
           archive_status: 'archived',
           date_archived: new Date().toISOString()
         })
