@@ -18,7 +18,7 @@ const Index = () => {
       createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
     },
     {
-      id: "2", 
+      id: "2",
       name: "Anna Schmidt",
       status: "sent",
       createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
@@ -33,39 +33,49 @@ const Index = () => {
     },
   ]);
 
-  const handleCreatePatient = (patientData: Omit<Patient, 'id' | 'createdAt' | 'movedAt'>) => {
+  const handleCreatePatient = (
+    patientData: Omit<Patient, "id" | "createdAt" | "movedAt">
+  ) => {
     const newPatient: Patient = {
       ...patientData,
       id: Date.now().toString(),
-      status: 'sent',
+      status: "sent",
       createdAt: new Date().toISOString(),
     };
-    
-    setPatients(prev => [...prev, newPatient]);
+
+    setPatients((prev) => [...prev, newPatient]);
   };
 
-  const handleMovePatient = (patientId: string, newStatus: Patient['status']) => {
-    setPatients(prev => prev.map(patient => {
-      if (patient.id === patientId) {
-        const updates: Partial<Patient> = { status: newStatus };
-        
-        // Reset counter when moving to "reminded"
-        if (newStatus === 'reminded') {
-          updates.movedAt = new Date().toISOString();
+  const handleMovePatient = (
+    patientId: string,
+    newStatus: Patient["status"]
+  ) => {
+    setPatients((prev) =>
+      prev.map((patient) => {
+        if (patient.id === patientId) {
+          const updates: Partial<Patient> = { status: newStatus };
+
+          // Reset counter when moving to "reminded"
+          if (newStatus === "reminded") {
+            updates.movedAt = new Date().toISOString();
+          }
+
+          return { ...patient, ...updates };
         }
-        
-        return { ...patient, ...updates };
-      }
-      return patient;
-    }));
+        return patient;
+      })
+    );
   };
 
-  const handleArchivePatient = (patientId: string, archiveType: 'terminated' | 'no_response') => {
-    setPatients(prev => prev.map(patient => 
-      patient.id === patientId 
-        ? { ...patient, status: archiveType }
-        : patient
-    ));
+  const handleArchivePatient = (
+    patientId: string,
+    archiveType: "terminated" | "no_response"
+  ) => {
+    setPatients((prev) =>
+      prev.map((patient) =>
+        patient.id === patientId ? { ...patient, status: archiveType } : patient
+      )
+    );
   };
 
   const handleSignOut = async () => {
@@ -91,7 +101,7 @@ const Index = () => {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-primary" />
-            <span className="font-medium">Welcome, {user?.email}</span>
+            <span className="font-medium">Willkommen</span>
           </div>
           <Button
             variant="outline"
@@ -100,7 +110,7 @@ const Index = () => {
             className="flex items-center gap-2"
           >
             <LogOut className="h-4 w-4" />
-            Sign Out
+            Abmelden
           </Button>
         </div>
       </header>
