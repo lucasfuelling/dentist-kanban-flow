@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,18 +38,18 @@ const Auth = () => {
         setError(error.message);
         toast({
           variant: "destructive",
-          title: "Login Failed",
+          title: "Login Error",
           description: error.message,
         });
       } else {
         toast({
-          title: "Welcome back!",
-          description: "You have been successfully logged in.",
+          title: "Willkommen!",
+          description: "Anmeldung erfolgreich",
         });
         navigate("/");
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      setError("Oops! Etwas ist schief gelaufen.");
     } finally {
       setIsLoading(false);
     }
