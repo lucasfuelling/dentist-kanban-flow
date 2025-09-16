@@ -26,6 +26,7 @@ export type Database = {
           patient_id: number
           pdf_file_path: string | null
           status: Database["public"]["Enums"]["Kanban"]
+          user_id: string
         }
         Insert: {
           archive_status?: Database["public"]["Enums"]["Archive"]
@@ -38,6 +39,7 @@ export type Database = {
           patient_id?: number
           pdf_file_path?: string | null
           status?: Database["public"]["Enums"]["Kanban"]
+          user_id: string
         }
         Update: {
           archive_status?: Database["public"]["Enums"]["Archive"]
@@ -50,6 +52,7 @@ export type Database = {
           patient_id?: number
           pdf_file_path?: string | null
           status?: Database["public"]["Enums"]["Kanban"]
+          user_id?: string
         }
         Relationships: []
       }
