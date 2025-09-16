@@ -1,8 +1,13 @@
 import { useState } from "react";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { Patient } from "@/types/patient";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { LogOut, User } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([
     // Sample data for demonstration
     {
@@ -63,13 +68,53 @@ const Index = () => {
     ));
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out successfully",
+        description: "You have been logged out of your account.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error signing out",
+        description: "There was a problem signing you out.",
+      });
+    }
+  };
+
   return (
-    <KanbanBoard
-      patients={patients}
-      onCreatePatient={handleCreatePatient}
-      onMovePatient={handleMovePatient}
-      onArchivePatient={handleArchivePatient}
-    />
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <User className="h-5 w-5 text-primary" />
+            <span className="font-medium">Welcome, {user?.email}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSignOut}
+            className="flex items-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto p-4">
+        <KanbanBoard
+          patients={patients}
+          onCreatePatient={handleCreatePatient}
+          onMovePatient={handleMovePatient}
+          onArchivePatient={handleArchivePatient}
+        />
+      </main>
+    </div>
   );
 };
 
