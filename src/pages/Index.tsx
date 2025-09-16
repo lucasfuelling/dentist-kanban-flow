@@ -1,47 +1,74 @@
-import { usePatientsData, PatientData } from "@/hooks/usePatientsData";
-import { KanbanBoardData } from "@/components/KanbanBoardData";
+import { useState } from "react";
+import { KanbanBoard } from "@/components/KanbanBoard";
+import { Patient } from "@/types/patient";
 
 const Index = () => {
-  const { 
-    patients, 
-    loading, 
-    fetchPatients, 
-    movePatient, 
-    archivePatient, 
-    getArchivedCount 
-  } = usePatientsData();
+  const [patients, setPatients] = useState<Patient[]>([
+    // Sample data for demonstration
+    {
+      id: "1",
+      name: "Max Mustermann",
+      email: "max.mustermann@email.com",
+      status: "sent",
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+    },
+    {
+      id: "2", 
+      name: "Anna Schmidt",
+      status: "sent",
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    },
+    {
+      id: "3",
+      name: "Peter Weber",
+      email: "peter@example.com",
+      status: "reminded",
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
+      movedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // moved 3 days ago
+    },
+  ]);
 
-  const handleCreatePatient = () => {
-    // Refresh the data after creating a patient
-    fetchPatients();
+  const handleCreatePatient = (patientData: Omit<Patient, 'id' | 'createdAt' | 'movedAt'>) => {
+    const newPatient: Patient = {
+      ...patientData,
+      id: Date.now().toString(),
+      status: 'sent',
+      createdAt: new Date().toISOString(),
+    };
+    
+    setPatients(prev => [...prev, newPatient]);
   };
 
-  const handleMovePatient = (patientId: number, newStatus: string) => {
-    movePatient(patientId, newStatus);
+  const handleMovePatient = (patientId: string, newStatus: Patient['status']) => {
+    setPatients(prev => prev.map(patient => {
+      if (patient.id === patientId) {
+        const updates: Partial<Patient> = { status: newStatus };
+        
+        // Reset counter when moving to "reminded"
+        if (newStatus === 'reminded') {
+          updates.movedAt = new Date().toISOString();
+        }
+        
+        return { ...patient, ...updates };
+      }
+      return patient;
+    }));
   };
 
-  const handleArchivePatient = (patientId: number, archiveType: string) => {
-    archivePatient(patientId, archiveType);
+  const handleArchivePatient = (patientId: string, archiveType: 'terminated' | 'no_response') => {
+    setPatients(prev => prev.map(patient => 
+      patient.id === patientId 
+        ? { ...patient, status: archiveType }
+        : patient
+    ));
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Lade Patientendaten...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <KanbanBoardData
+    <KanbanBoard
       patients={patients}
       onCreatePatient={handleCreatePatient}
       onMovePatient={handleMovePatient}
       onArchivePatient={handleArchivePatient}
-      getArchivedCount={getArchivedCount}
     />
   );
 };
