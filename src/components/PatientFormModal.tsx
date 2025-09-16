@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,15 +14,16 @@ import { useToast } from "@/hooks/use-toast";
 interface PatientFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (patient: {
-    name: string;
-    email?: string;
-    pdfFile?: File;
-  }) => void;
+  onSubmit: (patient: { name: string; email?: string; pdfFile?: File }) => void;
 }
 
-export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModalProps) {
-  const [name, setName] = useState("");
+export function PatientFormModal({
+  isOpen,
+  onClose,
+  onSubmit,
+}: PatientFormModalProps) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,7 +32,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type !== 'application/pdf') {
+      if (file.type !== "application/pdf") {
         toast({
           title: "Ungültiger Dateityp",
           description: "Bitte wählen Sie eine PDF-Datei aus.",
@@ -34,8 +40,9 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
         });
         return;
       }
-      
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+
+      if (file.size > 10 * 1024 * 1024) {
+        // 10MB limit
         toast({
           title: "Datei zu groß",
           description: "Die Datei darf maximal 10MB groß sein.",
@@ -43,18 +50,18 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
         });
         return;
       }
-      
+
       setPdfFile(file);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name.trim()) {
+
+    if (!lastName.trim()) {
       toast({
         title: "Name erforderlich",
-        description: "Bitte geben Sie einen Namen ein.",
+        description: "Bitte geben Sie den Nachnamen ein.",
         variant: "destructive",
       });
       return;
@@ -64,13 +71,16 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
 
     try {
       await onSubmit({
-        name: name.trim(),
+        name: firstName.trim()
+          ? `${firstName.trim()} ${lastName.trim()}`
+          : lastName.trim(),
         email: email.trim() || undefined,
         pdfFile: pdfFile || undefined,
       });
 
       // Reset form
-      setName("");
+      setFirstName("");
+      setLastName("");
       setEmail("");
       setPdfFile(null);
       onClose();
@@ -92,7 +102,8 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setName("");
+      setFirstName("");
+      setLastName("");
       setEmail("");
       setPdfFile(null);
       onClose();
@@ -110,20 +121,36 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium">
-                Name *
-              </Label>
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Vorname Nachname"
-                className="w-full"
-                disabled={isSubmitting}
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-sm font-medium">
+                  Vorname
+                </Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Vorname"
+                  className="w-full"
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-sm font-medium">
+                  Name *
+                </Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Nachname"
+                  className="w-full"
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -145,7 +172,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
               <Label className="text-sm font-medium">
                 PDF-Dokument (optional)
               </Label>
-              
+
               {!pdfFile ? (
                 <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
                   <input
@@ -203,7 +230,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit }: PatientFormModal
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !name.trim()}
+              disabled={isSubmitting || !lastName.trim()}
               className="bg-primary hover:bg-primary/90"
             >
               {isSubmitting ? "Wird erstellt..." : "Patient anlegen"}
