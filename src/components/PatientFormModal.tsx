@@ -130,7 +130,7 @@ export function PatientFormModal({
       setEmail("");
       setPdfFile(null);
       onClose();
-      onSubmit(); // Trigger data refresh
+      // Real-time subscription will handle the new patient update automatically
 
       toast({
         title: "Patient erstellt",

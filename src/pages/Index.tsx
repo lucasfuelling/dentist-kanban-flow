@@ -79,10 +79,17 @@ const Index = () => {
               console.log('INSERT payload:', payload.new);
               const newPatient = formatPatient(payload.new);
               console.log('Formatted new patient:', newPatient);
+              
+              // Only add if not already in the list (prevent duplicates)
               setPatients(prev => {
-                console.log('Previous patients:', prev);
+                const exists = prev.find(p => p.id === newPatient.id);
+                if (exists) {
+                  console.log('Patient already exists, skipping:', newPatient.id);
+                  return prev;
+                }
+                console.log('Adding new patient to list:', newPatient.id);
                 const updated = [...prev, newPatient];
-                console.log('Updated patients:', updated);
+                console.log('Updated patients count:', updated.length);
                 return updated;
               });
               break;
@@ -122,8 +129,7 @@ const Index = () => {
   }, [loadPatients, setupRealtimeSubscription, realtimeChannel]);
 
   const handleCreatePatient = useCallback(() => {
-    // Real-time subscription will handle the new patient update
-    // No need to manually refresh here
+    // This callback is no longer needed as real-time subscription handles updates
   }, []);
 
   // Optimistic UI update for moving patients
