@@ -16,18 +16,22 @@ import logo from "@/assets/logo.png";
 
 interface KanbanBoardProps {
   patients: Patient[];
-  onCreatePatient: (
-    patient: Omit<Patient, "id" | "createdAt" | "movedAt">
-  ) => void;
-  onMovePatient: (patientId: string, newStatus: Patient["status"]) => void;
+  loading: boolean;
+  onCreatePatient: (patient: {
+    name: string;
+    email?: string;
+    pdfFile?: File;
+  }) => Promise<void>;
+  onMovePatient: (patientId: string, newStatus: Patient["status"]) => Promise<void>;
   onArchivePatient: (
     patientId: string,
     archiveType: "terminated" | "no_response"
-  ) => void;
+  ) => Promise<void>;
 }
 
 export function KanbanBoard({
   patients,
+  loading,
   onCreatePatient,
   onMovePatient,
   onArchivePatient,
@@ -86,33 +90,39 @@ export function KanbanBoard({
     }
   };
 
-  const handleArchivePatient = (
+  const handleArchivePatient = async (
     patientId: string,
     archiveType: "terminated" | "no_response"
   ) => {
     const patient = patients.find((p) => p.id === patientId);
     if (!patient) return;
+    
     const archived = { patient, prevStatus: patient.status, archiveType };
     setLastArchived(archived);
-    onArchivePatient(patientId, archiveType);
+    
+    try {
+      await onArchivePatient(patientId, archiveType);
 
-    // Show the toast and get its controller object
-    const toastController = toast({
-      title: "Archiviert",
-      description: `${patient.name} wurde archiviert.`,
-      action: (
-        <button
-          onClick={() => {
-            onMovePatient(archived.patient.id, archived.prevStatus);
-            toastController.dismiss(); // Dismiss the toast after undo
-          }}
-          className="ml-4 underline text-primary"
-        >
-          Rückgängig
-        </button>
-      ),
-      duration: 3000,
-    });
+      // Show the toast and get its controller object
+      const toastController = toast({
+        title: "Archiviert",
+        description: `${patient.name} wurde archiviert.`,
+        action: (
+          <button
+            onClick={async () => {
+              await onMovePatient(archived.patient.id, archived.prevStatus);
+              toastController.dismiss(); // Dismiss the toast after undo
+            }}
+            className="ml-4 underline text-primary"
+          >
+            Rückgängig
+          </button>
+        ),
+        duration: 3000,
+      });
+    } catch (error) {
+      // Error handling is done in the hook
+    }
   };
 
   return (
@@ -161,8 +171,14 @@ export function KanbanBoard({
 
         {/* Main Content */}
         <div className="flex gap-6">
-          {/* Kanban Columns */}
-          <div className="flex gap-6 flex-1">
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Lade Patientendaten...</div>
+            </div>
+          ) : (
+            <>
+              {/* Kanban Columns */}
+              <div className="flex gap-6 flex-1">
             {/* Verschickt Column */}
             <div className="flex-1">
               <div className="bg-kanban-column rounded-lg p-4 h-fit">
@@ -254,10 +270,10 @@ export function KanbanBoard({
                 </Droppable>
               </div>
             </div>
-          </div>
+              </div>
 
-          {/* Archive Boxes */}
-          <div className="w-64 space-y-4">
+              {/* Archive Boxes */}
+              <div className="w-64 space-y-4">
             <ArchiveBox
               id="archive-terminated"
               title="Terminiert"
@@ -273,7 +289,9 @@ export function KanbanBoard({
               icon={XCircle}
               variant="error"
             />
-          </div>
+              </div>
+            </>
+          )}
         </div>
       </DragDropContext>
 

@@ -1,0 +1,308 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
+import { Patient, PatientStatus } from '@/types/patient';
+
+// Helper function to format database record to Patient type
+const formatPatient = (record: any): Patient => {
+  const fullName = record.first_name 
+    ? `${record.first_name} ${record.last_name}` 
+    : record.last_name;
+  
+  return {
+    id: record.patient_id?.toString() || record.id?.toString() || '',
+    name: fullName,
+    email: record.email || undefined,
+    status: record.status as PatientStatus,
+    createdAt: record.date_created,
+    movedAt: record.date_reminded || undefined,
+    pdfFilePath: record.pdf_file_path || undefined,
+  };
+};
+
+export const usePatients = () => {
+  const { user } = useAuth();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch initial data
+  const fetchPatients = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('data')
+        .select('*')
+        .eq('user_id', user.id)
+        .neq('archive_status', 'archived')
+        .order('date_created', { ascending: true });
+
+      if (error) throw error;
+
+      const formattedPatients = data?.map(formatPatient) || [];
+      setPatients(formattedPatients);
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+      toast({
+        title: 'Fehler beim Laden',
+        description: 'Patientendaten konnten nicht geladen werden.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  // Create patient with optimistic update
+  const createPatient = useCallback(async (patientData: {
+    name: string;
+    email?: string;
+    pdfFile?: File;
+  }) => {
+    if (!user?.id) return;
+
+    // Create optimistic patient
+    const optimisticPatient: Patient = {
+      id: `temp-${Date.now()}`,
+      name: patientData.name,
+      email: patientData.email,
+      status: 'sent' as PatientStatus,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Optimistically add to state
+    setPatients(prev => [...prev, optimisticPatient]);
+
+    try {
+      let pdfFilePath: string | undefined;
+
+      // Upload PDF if provided
+      if (patientData.pdfFile) {
+        const fileName = `${user.id}/${Date.now()}-${patientData.pdfFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('Cost_estimates')
+          .upload(fileName, patientData.pdfFile);
+
+        if (uploadError) throw uploadError;
+        pdfFilePath = fileName;
+      }
+
+      // Parse name
+      const nameParts = patientData.name.trim().split(' ');
+      const firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '';
+      const lastName = nameParts[nameParts.length - 1];
+
+      // Insert to database
+      const { data, error } = await supabase
+        .from('data')
+        .insert({
+          user_id: user.id,
+          first_name: firstName || null,
+          last_name: lastName,
+          email: patientData.email || null,
+          status: 'sent',
+          pdf_file_path: pdfFilePath || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Remove optimistic patient and let real-time handle the actual insert
+      setPatients(prev => prev.filter(p => p.id !== optimisticPatient.id));
+    } catch (error) {
+      console.error('Error creating patient:', error);
+      // Remove optimistic patient on error
+      setPatients(prev => prev.filter(p => p.id !== optimisticPatient.id));
+      
+      toast({
+        title: 'Fehler beim Erstellen',
+        description: 'Patient konnte nicht erstellt werden.',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  }, [user?.id]);
+
+  // Move patient with optimistic update
+  const movePatient = useCallback(async (
+    patientId: string, 
+    newStatus: PatientStatus
+  ) => {
+    if (!user?.id) return;
+
+    // Find current patient
+    const currentPatient = patients.find(p => p.id === patientId);
+    if (!currentPatient) return;
+
+    // Optimistically update local state
+    const updatedPatient = {
+      ...currentPatient,
+      status: newStatus,
+      movedAt: newStatus === 'reminded' ? new Date().toISOString() : currentPatient.movedAt,
+    };
+
+    setPatients(prev => 
+      prev.map(p => p.id === patientId ? updatedPatient : p)
+    );
+
+    try {
+      const updateData: any = { status: newStatus };
+      if (newStatus === 'reminded') {
+        updateData.date_reminded = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from('data')
+        .update(updateData)
+        .eq('patient_id', parseInt(patientId))
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error moving patient:', error);
+      
+      // Revert optimistic update on error
+      setPatients(prev => 
+        prev.map(p => p.id === patientId ? currentPatient : p)
+      );
+      
+      toast({
+        title: 'Fehler beim Verschieben',
+        description: 'Patient konnte nicht verschoben werden.',
+        variant: 'destructive',
+      });
+    }
+  }, [user?.id, patients]);
+
+  // Archive patient with optimistic update
+  const archivePatient = useCallback(async (
+    patientId: string,
+    archiveType: 'terminated' | 'no_response'
+  ) => {
+    if (!user?.id) return;
+
+    // Find current patient
+    const currentPatient = patients.find(p => p.id === patientId);
+    if (!currentPatient) return;
+
+    // Optimistically update local state
+    const updatedPatient = {
+      ...currentPatient,
+      status: archiveType as PatientStatus,
+    };
+
+    setPatients(prev => 
+      prev.map(p => p.id === patientId ? updatedPatient : p)
+    );
+
+    try {
+      const { error } = await supabase
+        .from('data')
+        .update({
+          status: archiveType as PatientStatus,
+          date_archived: new Date().toISOString(),
+        })
+        .eq('patient_id', parseInt(patientId))
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error archiving patient:', error);
+      
+      // Revert optimistic update on error
+      setPatients(prev => 
+        prev.map(p => p.id === patientId ? currentPatient : p)
+      );
+      
+      toast({
+        title: 'Fehler beim Archivieren',
+        description: 'Patient konnte nicht archiviert werden.',
+        variant: 'destructive',
+      });
+    }
+  }, [user?.id, patients]);
+
+  // Set up real-time subscription
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('patient-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'data',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Real-time INSERT:', payload);
+          const newPatient = formatPatient(payload.new);
+          
+          setPatients(prev => {
+            // Avoid duplicates
+            const exists = prev.some(p => p.id === newPatient.id);
+            if (exists) return prev;
+            return [...prev, newPatient];
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'data',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Real-time UPDATE:', payload);
+          const updatedPatient = formatPatient(payload.new);
+          
+          setPatients(prev =>
+            prev.map(p => p.id === updatedPatient.id ? updatedPatient : p)
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'data',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Real-time DELETE:', payload);
+          const deletedId = payload.old.patient_id?.toString();
+          if (deletedId) {
+            setPatients(prev => prev.filter(p => p.id !== deletedId));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
+  // Initial fetch
+  useEffect(() => {
+    if (user?.id) {
+      fetchPatients();
+    }
+  }, [fetchPatients, user?.id]);
+
+  return {
+    patients,
+    loading,
+    createPatient,
+    movePatient,
+    archivePatient,
+    refetch: fetchPatients,
+  };
+};

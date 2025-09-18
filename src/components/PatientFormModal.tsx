@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 interface PatientFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (patient: { name: string; email?: string; pdfFile?: File }) => void;
+  onSubmit: (patient: { name: string; email?: string; pdfFile?: File }) => Promise<void>;
 }
 
 export function PatientFormModal({
