@@ -1,147 +1,81 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { Patient } from "@/types/patient";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [patients, setPatients] = useState<Patient[]>([
+    // Sample data for demonstration
+    {
+      id: "1",
+      name: "Max Mustermann",
+      email: "max.mustermann@email.com",
+      status: "sent",
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+    },
+    {
+      id: "2",
+      name: "Anna Schmidt",
+      status: "sent",
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    },
+    {
+      id: "3",
+      name: "Peter Weber",
+      email: "peter@example.com",
+      status: "reminded",
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
+      movedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // moved 3 days ago
+    },
+  ]);
 
-  // Load patients from Supabase
-  const loadPatients = async () => {
-    if (!user?.id) return;
+  const handleCreatePatient = (
+    patientData: Omit<Patient, "id" | "createdAt" | "movedAt">
+  ) => {
+    const newPatient: Patient = {
+      ...patientData,
+      id: Date.now().toString(),
+      status: "sent",
+      createdAt: new Date().toISOString(),
+    };
 
-    try {
-      const { data, error } = await supabase
-        .from('data')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date_created', { ascending: true });
-
-      if (error) {
-        throw error;
-      }
-
-      const formattedPatients: Patient[] = data.map(row => {
-        return {
-          id: row.patient_id.toString(),
-          name: row.first_name ? `${row.first_name} ${row.last_name}` : row.last_name,
-          email: row.email || undefined,
-          status: row.status as Patient["status"],
-          createdAt: row.date_created,
-          movedAt: row.date_reminded || undefined,
-          pdfFile: row.pdf_file_path ? { name: row.pdf_file_path.split('/').pop() || 'Document.pdf' } : undefined
-        };
-      });
-
-      setPatients(formattedPatients);
-    } catch (error) {
-      console.error('Error loading patients:', error);
-      toast({
-        title: "Fehler beim Laden",
-        description: "Die Patientendaten konnten nicht geladen werden.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    setPatients((prev) => [...prev, newPatient]);
   };
 
-  useEffect(() => {
-    loadPatients();
-  }, [user?.id]);
-
-  const handleCreatePatient = () => {
-    loadPatients(); // Refresh data after creating patient
-  };
-
-  const handleMovePatient = async (
+  const handleMovePatient = (
     patientId: string,
     newStatus: Patient["status"]
   ) => {
-    if (!user?.id) return;
+    setPatients((prev) =>
+      prev.map((patient) => {
+        if (patient.id === patientId) {
+          const updates: Partial<Patient> = { status: newStatus };
 
-    try {
-      const updates: any = { status: newStatus };
-      
-      // Update reminded timestamp when moving to "reminded"
-      if (newStatus === "reminded") {
-        updates.date_reminded = new Date().toISOString();
-      }
-
-      const { error } = await supabase
-        .from('data')
-        .update(updates)
-        .eq('patient_id', parseInt(patientId))
-        .eq('user_id', user.id);
-
-      if (error) {
-        throw error;
-      }
-
-      // Update local state
-      setPatients((prev) =>
-        prev.map((patient) => {
-          if (patient.id === patientId) {
-            const localUpdates: Partial<Patient> = { status: newStatus };
-            if (newStatus === "reminded") {
-              localUpdates.movedAt = new Date().toISOString();
-            }
-            return { ...patient, ...localUpdates };
+          // Reset counter when moving to "reminded"
+          if (newStatus === "reminded") {
+            updates.movedAt = new Date().toISOString();
           }
-          return patient;
-        })
-      );
-    } catch (error) {
-      console.error('Error updating patient:', error);
-      toast({
-        title: "Fehler beim Aktualisieren",
-        description: "Der Patientenstatus konnte nicht aktualisiert werden.",
-        variant: "destructive",
-      });
-    }
+
+          return { ...patient, ...updates };
+        }
+        return patient;
+      })
+    );
   };
 
-  const handleArchivePatient = async (
+  const handleArchivePatient = (
     patientId: string,
     archiveType: "terminated" | "no_response"
   ) => {
-    if (!user?.id) return;
-
-    try {
-      const { error } = await supabase
-        .from('data')
-        .update({ 
-          status: archiveType as any, // Cast to handle enum update
-          archive_status: 'archived',
-          date_archived: new Date().toISOString()
-        })
-        .eq('patient_id', parseInt(patientId))
-        .eq('user_id', user.id);
-
-      if (error) {
-        throw error;
-      }
-
-      // Update local state
-      setPatients((prev) =>
-        prev.map((patient) =>
-          patient.id === patientId ? { ...patient, status: archiveType } : patient
-        )
-      );
-    } catch (error) {
-      console.error('Error archiving patient:', error);
-      toast({
-        title: "Fehler beim Archivieren",
-        description: "Der Patient konnte nicht archiviert werden.",
-        variant: "destructive",
-      });
-    }
+    setPatients((prev) =>
+      prev.map((patient) =>
+        patient.id === patientId ? { ...patient, status: archiveType } : patient
+      )
+    );
   };
 
   const handleSignOut = async () => {
@@ -183,21 +117,12 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto p-4">
-        {isLoading ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Lade Patientendaten...</p>
-            </div>
-          </div>
-        ) : (
-          <KanbanBoard
-            patients={patients}
-            onCreatePatient={handleCreatePatient}
-            onMovePatient={handleMovePatient}
-            onArchivePatient={handleArchivePatient}
-          />
-        )}
+        <KanbanBoard
+          patients={patients}
+          onCreatePatient={handleCreatePatient}
+          onMovePatient={handleMovePatient}
+          onArchivePatient={handleArchivePatient}
+        />
       </main>
     </div>
   );

@@ -16,7 +16,9 @@ import logo from "@/assets/logo.png";
 
 interface KanbanBoardProps {
   patients: Patient[];
-  onCreatePatient: () => void;
+  onCreatePatient: (
+    patient: Omit<Patient, "id" | "createdAt" | "movedAt">
+  ) => void;
   onMovePatient: (patientId: string, newStatus: Patient["status"]) => void;
   onArchivePatient: (
     patientId: string,

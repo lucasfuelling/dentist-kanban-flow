@@ -65,13 +65,7 @@ export type Database = {
     }
     Enums: {
       Archive: "archived" | "not_archived"
-      Kanban:
-        | "sent"
-        | "reminded"
-        | "appointment"
-        | "no_appointment"
-        | "terminated"
-        | "no_response"
+      Kanban: "sent" | "reminded" | "appointment" | "no_appointment"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -200,14 +194,7 @@ export const Constants = {
   public: {
     Enums: {
       Archive: ["archived", "not_archived"],
-      Kanban: [
-        "sent",
-        "reminded",
-        "appointment",
-        "no_appointment",
-        "terminated",
-        "no_response",
-      ],
+      Kanban: ["sent", "reminded", "appointment", "no_appointment"],
     },
   },
 } as const
