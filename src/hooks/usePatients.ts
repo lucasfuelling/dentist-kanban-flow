@@ -201,9 +201,9 @@ export const usePatients = () => {
       const { error } = await supabase
         .from('data')
         .update({
-          status: archiveType as PatientStatus,
+          status: archiveType,
           date_archived: new Date().toISOString(),
-        })
+        } as any)  // Type assertion to work around outdated generated types
         .eq('patient_id', parseInt(patientId))
         .eq('user_id', user.id);
 
