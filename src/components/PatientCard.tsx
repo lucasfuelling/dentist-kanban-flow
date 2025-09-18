@@ -11,7 +11,7 @@ export function PatientCard({ patient }: PatientCardProps) {
     const targetDate = new Date(date);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - targetDate.getTime());
-    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   const relevantDate =
@@ -61,19 +61,21 @@ export function PatientCard({ patient }: PatientCardProps) {
         {patient.pdfFile && (
           <div className="flex items-center text-primary text-xs">
             <FileText className="h-3 w-3 mr-1" />
-            <a
-              href={
-                patient.pdfFile instanceof File 
-                  ? URL.createObjectURL(patient.pdfFile)
-                  : `https://fjrdillreulrmtdtwnth.supabase.co/storage/v1/object/public/Cost_estimates/${patient.pdfFile.name}`
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="truncate max-w-[80px] underline hover:text-primary/80 transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {patient.pdfFile.name}
-            </a>
+            {patient.pdfFile instanceof File ? (
+              <a
+                href={URL.createObjectURL(patient.pdfFile)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="truncate max-w-[80px] underline hover:text-primary/80"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {patient.pdfFile.name}
+              </a>
+            ) : (
+              <span className="truncate max-w-[80px] text-primary/80">
+                {patient.pdfFile.name}
+              </span>
+            )}
           </div>
         )}
       </div>
