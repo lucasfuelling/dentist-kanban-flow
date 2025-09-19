@@ -7,7 +7,14 @@ import {
   DropResult,
 } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
-import { Plus, Archive, XCircle, CheckCircle2, Filter, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Archive,
+  XCircle,
+  CheckCircle2,
+  Filter,
+  Trash2,
+} from "lucide-react";
 import { PatientCard } from "./PatientCard";
 import { PatientFormModal } from "./PatientFormModal";
 import { ArchiveBox } from "./ArchiveBox";
@@ -310,7 +317,7 @@ export function KanbanBoard({
                   icon={XCircle}
                   variant="error"
                 />
-                
+
                 {/* Delete Archived Button */}
                 {totalArchivedCount > 0 && onDeleteArchived && (
                   <Button
@@ -320,7 +327,7 @@ export function KanbanBoard({
                     className="w-full flex items-center gap-2"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Archivierte löschen ({totalArchivedCount})
+                    Löschen ({totalArchivedCount})
                   </Button>
                 )}
               </div>
