@@ -7,10 +7,11 @@ import {
   DropResult,
 } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
-import { Plus, Archive, XCircle, CheckCircle2, Filter } from "lucide-react";
+import { Plus, Archive, XCircle, CheckCircle2, Filter, Trash2 } from "lucide-react";
 import { PatientCard } from "./PatientCard";
 import { PatientFormModal } from "./PatientFormModal";
 import { ArchiveBox } from "./ArchiveBox";
+import { DeleteArchivedDialog } from "./DeleteArchivedDialog";
 import { Patient } from "@/types/patient";
 import logo from "@/assets/logo.png";
 
@@ -30,6 +31,7 @@ interface KanbanBoardProps {
     patientId: string,
     archiveType: "terminated" | "no_response"
   ) => Promise<void>;
+  onDeleteArchived?: () => Promise<void>;
 }
 
 export function KanbanBoard({
@@ -38,8 +40,10 @@ export function KanbanBoard({
   onCreatePatient,
   onMovePatient,
   onArchivePatient,
+  onDeleteArchived,
 }: KanbanBoardProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<"date" | "name">("date");
   const [lastArchived, setLastArchived] = useState<{
     patient: Patient;
@@ -69,6 +73,7 @@ export function KanbanBoard({
   const noResponseCount = patients.filter(
     (p) => p.status === "no_response"
   ).length;
+  const totalArchivedCount = terminatedCount + noResponseCount;
 
   const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -125,6 +130,13 @@ export function KanbanBoard({
       });
     } catch (error) {
       // Error handling is done in the hook
+    }
+  };
+
+  const handleDeleteArchived = async () => {
+    setIsDeleteDialogOpen(false);
+    if (onDeleteArchived) {
+      await onDeleteArchived();
     }
   };
 
@@ -298,6 +310,19 @@ export function KanbanBoard({
                   icon={XCircle}
                   variant="error"
                 />
+                
+                {/* Delete Archived Button */}
+                {totalArchivedCount > 0 && onDeleteArchived && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                    className="w-full flex items-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Archivierte löschen ({totalArchivedCount})
+                  </Button>
+                )}
               </div>
             </>
           )}
@@ -308,6 +333,13 @@ export function KanbanBoard({
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={onCreatePatient}
+      />
+
+      <DeleteArchivedDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteArchived}
+        count={totalArchivedCount}
       />
     </div>
   );

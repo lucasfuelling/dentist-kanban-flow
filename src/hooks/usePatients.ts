@@ -335,12 +335,56 @@ export const usePatients = () => {
     }
   }, [fetchPatients, user?.id]);
 
+  // Delete archived patients with optimistic update
+  const deleteArchivedPatients = useCallback(async () => {
+    if (!user?.id) return;
+
+    // Find all archived patients
+    const archivedPatients = patients.filter(
+      p => p.status === 'terminated' || p.status === 'no_response'
+    );
+
+    if (archivedPatients.length === 0) return;
+
+    // Optimistically remove from state
+    setPatients(prev => prev.filter(
+      p => p.status !== 'terminated' && p.status !== 'no_response'
+    ));
+
+    try {
+      const { error } = await supabase
+        .from('data')
+        .delete()
+        .eq('user_id', user.id)
+        .in('status', ['terminated', 'no_response']);
+
+      if (error) throw error;
+
+      toast({
+        title: "Erfolgreich gelöscht",
+        description: `${archivedPatients.length} archivierte Einträge wurden gelöscht.`,
+      });
+    } catch (error) {
+      console.error('Error deleting archived patients:', error);
+      
+      // Revert optimistic update on error
+      setPatients(prev => [...prev, ...archivedPatients]);
+      
+      toast({
+        title: "Fehler beim Löschen",
+        description: "Archivierte Einträge konnten nicht gelöscht werden.",
+        variant: "destructive",
+      });
+    }
+  }, [user?.id, patients]);
+
   return {
     patients,
     loading,
     createPatient,
     movePatient,
     archivePatient,
+    deleteArchivedPatients,
     refetch: fetchPatients,
   };
 };
