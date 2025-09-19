@@ -1,17 +1,36 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { toast } from '@/hooks/use-toast';
-import { Patient, PatientStatus } from '@/types/patient';
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
+import { Patient, PatientStatus } from "@/types/patient";
 
+interface PatientRecord {
+  patient_id?: number;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  pdf_file_path?: string;
+  date_created?: string; // Use string for timestamps from DB
+  date_reminded?: string;
+  archive_status?: "archived" | "not_archived";
+  date_archived?: string;
+  status?:
+    | "sent"
+    | "reminded"
+    | "appointment"
+    | "no_appointment"
+    | "terminated"
+    | "no_response"; // Adjust to actual enum/string if needed
+  user_id?: string;
+}
 // Helper function to format database record to Patient type
-const formatPatient = (record: any): Patient => {
-  const fullName = record.first_name 
-    ? `${record.first_name} ${record.last_name}` 
+const formatPatient = (record: PatientRecord): Patient => {
+  const fullName = record.first_name
+    ? `${record.first_name} ${record.last_name}`
     : record.last_name;
-  
+
   return {
-    id: record.patient_id?.toString() || '',
+    id: record.patient_id?.toString() || "",
     name: fullName,
     email: record.email || undefined,
     status: record.status as PatientStatus,
@@ -32,22 +51,22 @@ export const usePatients = () => {
 
     try {
       const { data, error } = await supabase
-        .from('data')
-        .select('*')
-        .eq('user_id', user.id)
-        .neq('archive_status', 'archived')
-        .order('date_created', { ascending: true });
+        .from("data")
+        .select("*")
+        .eq("user_id", user.id)
+        .neq("archive_status", "archived")
+        .order("date_created", { ascending: true });
 
       if (error) throw error;
 
       const formattedPatients = data?.map(formatPatient) || [];
       setPatients(formattedPatients);
     } catch (error) {
-      console.error('Error fetching patients:', error);
+      console.error("Error fetching patients:", error);
       toast({
-        title: 'Fehler beim Laden',
-        description: 'Patientendaten konnten nicht geladen werden.',
-        variant: 'destructive',
+        title: "Fehler beim Laden",
+        description: "Patientendaten konnten nicht geladen werden.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -55,205 +74,212 @@ export const usePatients = () => {
   }, [user?.id]);
 
   // Create patient with optimistic update
-  const createPatient = useCallback(async (patientData: {
-    name: string;
-    email?: string;
-    pdfFile?: File;
-  }) => {
-    if (!user?.id) return;
+  const createPatient = useCallback(
+    async (patientData: { name: string; email?: string; pdfFile?: File }) => {
+      if (!user?.id) return;
 
-    // Create optimistic patient
-    const optimisticPatient: Patient = {
-      id: `temp-${Date.now()}`,
-      name: patientData.name,
-      email: patientData.email,
-      status: 'sent' as PatientStatus,
-      createdAt: new Date().toISOString(),
-    };
+      // Create optimistic patient
+      const optimisticPatient: Patient = {
+        id: `temp-${Date.now()}`,
+        name: patientData.name,
+        email: patientData.email,
+        status: "sent" as PatientStatus,
+        createdAt: new Date().toISOString(),
+      };
 
-    // Optimistically add to state
-    setPatients(prev => [...prev, optimisticPatient]);
+      // Optimistically add to state
+      setPatients((prev) => [...prev, optimisticPatient]);
 
-    try {
-      let pdfFilePath: string | undefined;
+      try {
+        let pdfFilePath: string | undefined;
 
-      // Upload PDF if provided
-      if (patientData.pdfFile) {
-        const fileName = `${user.id}/${Date.now()}-${patientData.pdfFile.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('Cost_estimates')
-          .upload(fileName, patientData.pdfFile);
+        // Upload PDF if provided
+        if (patientData.pdfFile) {
+          const fileName = `${user.id}/${Date.now()}-${
+            patientData.pdfFile.name
+          }`;
+          const { error: uploadError } = await supabase.storage
+            .from("Cost_estimates")
+            .upload(fileName, patientData.pdfFile);
 
-        if (uploadError) throw uploadError;
-        pdfFilePath = fileName;
+          if (uploadError) throw uploadError;
+          pdfFilePath = fileName;
+        }
+
+        // Parse name
+        const nameParts = patientData.name.trim().split(" ");
+        const firstName =
+          nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : "";
+        const lastName = nameParts[nameParts.length - 1];
+
+        // Insert to database
+        const { data, error } = await supabase
+          .from("data")
+          .insert({
+            user_id: user.id,
+            first_name: firstName || null,
+            last_name: lastName,
+            email: patientData.email || null,
+            status: "sent",
+            pdf_file_path: pdfFilePath || null,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        console.log("Created patient:", data);
+
+        // Replace optimistic patient with real data immediately
+        const realPatient = formatPatient(data);
+        setPatients((prev) =>
+          prev.map((p) => (p.id === optimisticPatient.id ? realPatient : p))
+        );
+      } catch (error) {
+        console.error("Error creating patient:", error);
+        // Remove optimistic patient on error
+        setPatients((prev) =>
+          prev.filter((p) => p.id !== optimisticPatient.id)
+        );
+
+        toast({
+          title: "Fehler beim Erstellen",
+          description: "Patient konnte nicht erstellt werden.",
+          variant: "destructive",
+        });
+        throw error;
       }
-
-      // Parse name
-      const nameParts = patientData.name.trim().split(' ');
-      const firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '';
-      const lastName = nameParts[nameParts.length - 1];
-
-      // Insert to database
-      const { data, error } = await supabase
-        .from('data')
-        .insert({
-          user_id: user.id,
-          first_name: firstName || null,
-          last_name: lastName,
-          email: patientData.email || null,
-          status: 'sent',
-          pdf_file_path: pdfFilePath || null,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      console.log('Created patient:', data);
-
-      // Replace optimistic patient with real data immediately
-      const realPatient = formatPatient(data);
-      setPatients(prev => 
-        prev.map(p => p.id === optimisticPatient.id ? realPatient : p)
-      );
-    } catch (error) {
-      console.error('Error creating patient:', error);
-      // Remove optimistic patient on error
-      setPatients(prev => prev.filter(p => p.id !== optimisticPatient.id));
-      
-      toast({
-        title: 'Fehler beim Erstellen',
-        description: 'Patient konnte nicht erstellt werden.',
-        variant: 'destructive',
-      });
-      throw error;
-    }
-  }, [user?.id]);
+    },
+    [user?.id]
+  );
 
   // Move patient with optimistic update
-  const movePatient = useCallback(async (
-    patientId: string, 
-    newStatus: PatientStatus
-  ) => {
-    if (!user?.id) return;
+  const movePatient = useCallback(
+    async (patientId: string, newStatus: PatientStatus) => {
+      if (!user?.id) return;
 
-    // Find current patient
-    const currentPatient = patients.find(p => p.id === patientId);
-    if (!currentPatient) return;
+      // Find current patient
+      const currentPatient = patients.find((p) => p.id === patientId);
+      if (!currentPatient) return;
 
-    // Optimistically update local state
-    const updatedPatient = {
-      ...currentPatient,
-      status: newStatus,
-      movedAt: newStatus === 'reminded' ? new Date().toISOString() : currentPatient.movedAt,
-    };
+      // Optimistically update local state
+      const updatedPatient = {
+        ...currentPatient,
+        status: newStatus,
+        movedAt:
+          newStatus === "reminded"
+            ? new Date().toISOString()
+            : currentPatient.movedAt,
+      };
 
-    setPatients(prev => 
-      prev.map(p => p.id === patientId ? updatedPatient : p)
-    );
-
-    try {
-      const updateData: any = { status: newStatus };
-      if (newStatus === 'reminded') {
-        updateData.date_reminded = new Date().toISOString();
-      }
-
-      const { error } = await supabase
-        .from('data')
-        .update(updateData)
-        .eq('patient_id', parseInt(patientId))
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error moving patient:', error);
-      
-      // Revert optimistic update on error
-      setPatients(prev => 
-        prev.map(p => p.id === patientId ? currentPatient : p)
+      setPatients((prev) =>
+        prev.map((p) => (p.id === patientId ? updatedPatient : p))
       );
-      
-      toast({
-        title: 'Fehler beim Verschieben',
-        description: 'Patient konnte nicht verschoben werden.',
-        variant: 'destructive',
-      });
-    }
-  }, [user?.id, patients]);
+
+      try {
+        const updateData: Partial<PatientRecord> = { status: newStatus };
+        if (newStatus === "reminded") {
+          updateData.date_reminded = new Date().toISOString();
+        }
+
+        const { error } = await supabase
+          .from("data")
+          .update(updateData)
+          .eq("patient_id", parseInt(patientId))
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+      } catch (error) {
+        console.error("Error moving patient:", error);
+
+        // Revert optimistic update on error
+        setPatients((prev) =>
+          prev.map((p) => (p.id === patientId ? currentPatient : p))
+        );
+
+        toast({
+          title: "Fehler beim Verschieben",
+          description: "Patient konnte nicht verschoben werden.",
+          variant: "destructive",
+        });
+      }
+    },
+    [user?.id, patients]
+  );
 
   // Archive patient with optimistic update
-  const archivePatient = useCallback(async (
-    patientId: string,
-    archiveType: 'terminated' | 'no_response'
-  ) => {
-    if (!user?.id) return;
+  const archivePatient = useCallback(
+    async (patientId: string, archiveType: "terminated" | "no_response") => {
+      if (!user?.id) return;
 
-    // Find current patient
-    const currentPatient = patients.find(p => p.id === patientId);
-    if (!currentPatient) return;
+      // Find current patient
+      const currentPatient = patients.find((p) => p.id === patientId);
+      if (!currentPatient) return;
 
-    // Optimistically update local state
-    const updatedPatient = {
-      ...currentPatient,
-      status: archiveType as PatientStatus,
-    };
+      // Optimistically update local state
+      const updatedPatient = {
+        ...currentPatient,
+        status: archiveType as PatientStatus,
+      };
 
-    setPatients(prev => 
-      prev.map(p => p.id === patientId ? updatedPatient : p)
-    );
-
-    try {
-      const { error } = await supabase
-        .from('data')
-        .update({
-          status: archiveType,
-          date_archived: new Date().toISOString(),
-        } as any)  // Type assertion to work around outdated generated types
-        .eq('patient_id', parseInt(patientId))
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error archiving patient:', error);
-      
-      // Revert optimistic update on error
-      setPatients(prev => 
-        prev.map(p => p.id === patientId ? currentPatient : p)
+      setPatients((prev) =>
+        prev.map((p) => (p.id === patientId ? updatedPatient : p))
       );
-      
-      toast({
-        title: 'Fehler beim Archivieren',
-        description: 'Patient konnte nicht archiviert werden.',
-        variant: 'destructive',
-      });
-    }
-  }, [user?.id, patients]);
+
+      try {
+        const { error } = await supabase
+          .from("data")
+          .update({
+            status: archiveType,
+            date_archived: new Date().toISOString(),
+          }) // Type assertion to work around outdated generated types
+          .eq("patient_id", parseInt(patientId))
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+      } catch (error) {
+        console.error("Error archiving patient:", error);
+
+        // Revert optimistic update on error
+        setPatients((prev) =>
+          prev.map((p) => (p.id === patientId ? currentPatient : p))
+        );
+
+        toast({
+          title: "Fehler beim Archivieren",
+          description: "Patient konnte nicht archiviert werden.",
+          variant: "destructive",
+        });
+      }
+    },
+    [user?.id, patients]
+  );
 
   // Set up real-time subscription
   useEffect(() => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('patient-changes')
+      .channel("patient-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'data',
+          event: "INSERT",
+          schema: "public",
+          table: "data",
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('Real-time INSERT:', payload);
+          console.log("Real-time INSERT:", payload);
           const newPatient = formatPatient(payload.new);
-          console.log('Formatted new patient:', newPatient);
-          
-          setPatients(prev => {
+          console.log("Formatted new patient:", newPatient);
+
+          setPatients((prev) => {
             // Check if this patient already exists (from optimistic update)
-            const existingIndex = prev.findIndex(p => p.id === newPatient.id);
+            const existingIndex = prev.findIndex((p) => p.id === newPatient.id);
             if (existingIndex >= 0) {
               // Update existing patient with real data
-              return prev.map((p, index) => 
+              return prev.map((p, index) =>
                 index === existingIndex ? newPatient : p
               );
             }
@@ -263,35 +289,35 @@ export const usePatients = () => {
         }
       )
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'data',
+          event: "UPDATE",
+          schema: "public",
+          table: "data",
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('Real-time UPDATE:', payload);
+          console.log("Real-time UPDATE:", payload);
           const updatedPatient = formatPatient(payload.new);
-          
-          setPatients(prev =>
-            prev.map(p => p.id === updatedPatient.id ? updatedPatient : p)
+
+          setPatients((prev) =>
+            prev.map((p) => (p.id === updatedPatient.id ? updatedPatient : p))
           );
         }
       )
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'data',
+          event: "DELETE",
+          schema: "public",
+          table: "data",
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('Real-time DELETE:', payload);
+          console.log("Real-time DELETE:", payload);
           const deletedId = payload.old.patient_id?.toString();
           if (deletedId) {
-            setPatients(prev => prev.filter(p => p.id !== deletedId));
+            setPatients((prev) => prev.filter((p) => p.id !== deletedId));
           }
         }
       )

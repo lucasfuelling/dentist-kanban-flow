@@ -22,7 +22,10 @@ interface KanbanBoardProps {
     email?: string;
     pdfFile?: File;
   }) => Promise<void>;
-  onMovePatient: (patientId: string, newStatus: Patient["status"]) => Promise<void>;
+  onMovePatient: (
+    patientId: string,
+    newStatus: Patient["status"]
+  ) => Promise<void>;
   onArchivePatient: (
     patientId: string,
     archiveType: "terminated" | "no_response"
@@ -96,10 +99,10 @@ export function KanbanBoard({
   ) => {
     const patient = patients.find((p) => p.id === patientId);
     if (!patient) return;
-    
+
     const archived = { patient, prevStatus: patient.status, archiveType };
     setLastArchived(archived);
-    
+
     try {
       await onArchivePatient(patientId, archiveType);
 
@@ -173,122 +176,128 @@ export function KanbanBoard({
         <div className="flex gap-6">
           {loading ? (
             <div className="flex-1 flex items-center justify-center py-8">
-              <div className="text-muted-foreground">Lade Patientendaten...</div>
+              <div className="text-muted-foreground">
+                Lade Patientendaten...
+              </div>
             </div>
           ) : (
             <>
               {/* Kanban Columns */}
               <div className="flex gap-6 flex-1">
-            {/* Verschickt Column */}
-            <div className="flex-1">
-              <div className="bg-kanban-column rounded-lg p-4 h-fit">
-                <h2 className="font-semibold text-foreground mb-4 flex items-center">
-                  Verschickt
-                  <span className="ml-2 bg-primary/10 text-primary text-sm px-2 py-1 rounded-full">
-                    {sentPatients.length}
-                  </span>
-                </h2>
+                {/* Verschickt Column */}
+                <div className="flex-1">
+                  <div className="bg-kanban-column rounded-lg p-4 h-fit">
+                    <h2 className="font-semibold text-foreground mb-4 flex items-center">
+                      Verschickt
+                      <span className="ml-2 bg-primary/10 text-primary text-sm px-2 py-1 rounded-full">
+                        {sentPatients.length}
+                      </span>
+                    </h2>
 
-                <Droppable droppableId="sent">
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`space-y-3 min-h-[200px] transition-colors ${
-                        snapshot.isDraggingOver ? "bg-accent/20" : ""
-                      }`}
-                    >
-                      {sentPatients.map((patient, index) => (
-                        <Draggable
-                          key={patient.id}
-                          draggableId={patient.id}
-                          index={index}
+                    <Droppable droppableId="sent">
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`space-y-3 min-h-[200px] transition-colors ${
+                            snapshot.isDraggingOver ? "bg-accent/20" : ""
+                          }`}
                         >
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`transition-transform ${
-                                snapshot.isDragging ? "rotate-2 scale-105" : ""
-                              }`}
+                          {sentPatients.map((patient, index) => (
+                            <Draggable
+                              key={patient.id}
+                              draggableId={patient.id}
+                              index={index}
                             >
-                              <PatientCard patient={patient} />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </div>
-            </div>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`transition-transform ${
+                                    snapshot.isDragging
+                                      ? "rotate-2 scale-105"
+                                      : ""
+                                  }`}
+                                >
+                                  <PatientCard patient={patient} />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
+                </div>
 
-            {/* Erinnert Column */}
-            <div className="flex-1">
-              <div className="bg-kanban-column rounded-lg p-4 h-fit">
-                <h2 className="font-semibold text-foreground mb-4 flex items-center">
-                  Erinnert
-                  <span className="ml-2 bg-primary/10 text-primary text-sm px-2 py-1 rounded-full">
-                    {remindedPatients.length}
-                  </span>
-                </h2>
+                {/* Erinnert Column */}
+                <div className="flex-1">
+                  <div className="bg-kanban-column rounded-lg p-4 h-fit">
+                    <h2 className="font-semibold text-foreground mb-4 flex items-center">
+                      Erinnert
+                      <span className="ml-2 bg-primary/10 text-primary text-sm px-2 py-1 rounded-full">
+                        {remindedPatients.length}
+                      </span>
+                    </h2>
 
-                <Droppable droppableId="reminded">
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`space-y-3 min-h-[200px] transition-colors ${
-                        snapshot.isDraggingOver ? "bg-accent/20" : ""
-                      }`}
-                    >
-                      {remindedPatients.map((patient, index) => (
-                        <Draggable
-                          key={patient.id}
-                          draggableId={patient.id}
-                          index={index}
+                    <Droppable droppableId="reminded">
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`space-y-3 min-h-[200px] transition-colors ${
+                            snapshot.isDraggingOver ? "bg-accent/20" : ""
+                          }`}
                         >
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`transition-transform ${
-                                snapshot.isDragging ? "rotate-2 scale-105" : ""
-                              }`}
+                          {remindedPatients.map((patient, index) => (
+                            <Draggable
+                              key={patient.id}
+                              draggableId={patient.id}
+                              index={index}
                             >
-                              <PatientCard patient={patient} />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </div>
-            </div>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`transition-transform ${
+                                    snapshot.isDragging
+                                      ? "rotate-2 scale-105"
+                                      : ""
+                                  }`}
+                                >
+                                  <PatientCard patient={patient} />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
+                </div>
               </div>
 
               {/* Archive Boxes */}
               <div className="w-64 space-y-4">
-            <ArchiveBox
-              id="archive-terminated"
-              title="Terminiert"
-              count={terminatedCount}
-              icon={CheckCircle2}
-              variant="success"
-            />
+                <ArchiveBox
+                  id="archive-terminated"
+                  title="Termin vereinbart"
+                  count={terminatedCount}
+                  icon={CheckCircle2}
+                  variant="success"
+                />
 
-            <ArchiveBox
-              id="archive-no-response"
-              title="Keine Rückmeldung"
-              count={noResponseCount}
-              icon={XCircle}
-              variant="error"
-            />
+                <ArchiveBox
+                  id="archive-no-response"
+                  title="Keine Rückmeldung"
+                  count={noResponseCount}
+                  icon={XCircle}
+                  variant="error"
+                />
               </div>
             </>
           )}

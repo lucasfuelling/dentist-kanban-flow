@@ -1,4 +1,10 @@
-import { FileText, Mail, Calendar, BellRing, MoveRight } from "lucide-react";
+import {
+  FileText,
+  Mail,
+  BellRing,
+  MoveRight,
+  SendHorizontal,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Patient } from "@/types/patient";
 
@@ -45,7 +51,7 @@ export function PatientCard({ patient }: PatientCardProps) {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center text-muted-foreground text-xs">
-          <Calendar className="h-3 w-3 mr-1" />
+          <SendHorizontal className="h-3 w-3 mr-1" />
           <span>{new Date(patient.createdAt).toLocaleDateString("de-DE")}</span>
           {patient.status === "reminded" && patient.movedAt && (
             <>
