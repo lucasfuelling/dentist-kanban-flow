@@ -14,7 +14,11 @@ import { useToast } from "@/hooks/use-toast";
 interface PatientFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (patient: { name: string; email?: string; pdfFile?: File }) => Promise<void>;
+  onSubmit: (patient: {
+    name: string;
+    email?: string;
+    pdfFile?: File;
+  }) => Promise<void>;
 }
 
 export function PatientFormModal({
@@ -155,7 +159,7 @@ export function PatientFormModal({
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
-                E-Mail (optional)
+                E-Mail
               </Label>
               <Input
                 id="email"
@@ -169,9 +173,7 @@ export function PatientFormModal({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                PDF-Dokument (optional)
-              </Label>
+              <Label className="text-sm font-medium">PDF-Dokument</Label>
 
               {!pdfFile ? (
                 <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">

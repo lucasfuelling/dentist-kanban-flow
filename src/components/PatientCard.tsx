@@ -17,7 +17,7 @@ export function PatientCard({ patient }: PatientCardProps) {
     const targetDate = new Date(date);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - targetDate.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   };
 
   const relevantDate =
