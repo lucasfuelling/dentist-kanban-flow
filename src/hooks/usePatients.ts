@@ -11,7 +11,7 @@ const formatPatient = (record: any): Patient => {
     : record.last_name;
   
   return {
-    id: record.patient_id?.toString() || record.id?.toString() || '',
+    id: record.patient_id?.toString() || '',
     name: fullName,
     email: record.email || undefined,
     status: record.status as PatientStatus,
@@ -109,8 +109,13 @@ export const usePatients = () => {
 
       if (error) throw error;
 
-      // Remove optimistic patient and let real-time handle the actual insert
-      setPatients(prev => prev.filter(p => p.id !== optimisticPatient.id));
+      console.log('Created patient:', data);
+
+      // Replace optimistic patient with real data immediately
+      const realPatient = formatPatient(data);
+      setPatients(prev => 
+        prev.map(p => p.id === optimisticPatient.id ? realPatient : p)
+      );
     } catch (error) {
       console.error('Error creating patient:', error);
       // Remove optimistic patient on error
@@ -241,11 +246,18 @@ export const usePatients = () => {
         (payload) => {
           console.log('Real-time INSERT:', payload);
           const newPatient = formatPatient(payload.new);
+          console.log('Formatted new patient:', newPatient);
           
           setPatients(prev => {
-            // Avoid duplicates
-            const exists = prev.some(p => p.id === newPatient.id);
-            if (exists) return prev;
+            // Check if this patient already exists (from optimistic update)
+            const existingIndex = prev.findIndex(p => p.id === newPatient.id);
+            if (existingIndex >= 0) {
+              // Update existing patient with real data
+              return prev.map((p, index) => 
+                index === existingIndex ? newPatient : p
+              );
+            }
+            // Add new patient if it doesn't exist
             return [...prev, newPatient];
           });
         }
