@@ -4,7 +4,7 @@ export interface Patient {
   id: string;
   name: string;
   email?: string;
-  pdfFile?: File;
+  pdfUrl?: string;
   pdfFilePath?: string;
   status: PatientStatus;
   createdAt: string;

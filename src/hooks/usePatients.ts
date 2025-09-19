@@ -23,20 +23,45 @@ interface PatientRecord {
     | "no_response"; // Adjust to actual enum/string if needed
   user_id?: string;
 }
+// Helper function to generate signed URL for PDF
+const generatePdfUrl = async (filePath: string): Promise<string | undefined> => {
+  try {
+    const { data, error } = await supabase.storage
+      .from('Cost_estimates')
+      .createSignedUrl(filePath, 2592000); // 1 month expiration (30 days * 24 hours * 60 minutes * 60 seconds)
+    
+    if (error) {
+      console.error('Error generating signed URL:', error);
+      return undefined;
+    }
+    
+    return data.signedUrl;
+  } catch (error) {
+    console.error('Error generating signed URL:', error);
+    return undefined;
+  }
+};
+
 // Helper function to format database record to Patient type
-const formatPatient = (record: PatientRecord): Patient => {
+const formatPatient = async (record: PatientRecord): Promise<Patient> => {
   const fullName = record.first_name
     ? `${record.first_name} ${record.last_name}`
     : record.last_name;
+
+  let pdfUrl: string | undefined;
+  if (record.pdf_file_path) {
+    pdfUrl = await generatePdfUrl(record.pdf_file_path);
+  }
 
   return {
     id: record.patient_id?.toString() || "",
     name: fullName,
     email: record.email || undefined,
+    pdfUrl,
+    pdfFilePath: record.pdf_file_path || undefined,
     status: record.status as PatientStatus,
     createdAt: record.date_created,
     movedAt: record.date_reminded || undefined,
-    pdfFilePath: record.pdf_file_path || undefined,
   };
 };
 
@@ -59,7 +84,7 @@ export const usePatients = () => {
 
       if (error) throw error;
 
-      const formattedPatients = data?.map(formatPatient) || [];
+      const formattedPatients = await Promise.all(data?.map(formatPatient) || []);
       setPatients(formattedPatients);
     } catch (error) {
       console.error("Error fetching patients:", error);
@@ -131,7 +156,7 @@ export const usePatients = () => {
         console.log("Created patient:", data);
 
         // Replace optimistic patient with real data immediately
-        const realPatient = formatPatient(data);
+        const realPatient = await formatPatient(data);
         setPatients((prev) =>
           prev.map((p) => (p.id === optimisticPatient.id ? realPatient : p))
         );
@@ -269,9 +294,9 @@ export const usePatients = () => {
           table: "data",
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
+        async (payload) => {
           console.log("Real-time INSERT:", payload);
-          const newPatient = formatPatient(payload.new);
+          const newPatient = await formatPatient(payload.new);
           console.log("Formatted new patient:", newPatient);
 
           setPatients((prev) => {
@@ -296,9 +321,9 @@ export const usePatients = () => {
           table: "data",
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
+        async (payload) => {
           console.log("Real-time UPDATE:", payload);
-          const updatedPatient = formatPatient(payload.new);
+          const updatedPatient = await formatPatient(payload.new);
 
           setPatients((prev) =>
             prev.map((p) => (p.id === updatedPatient.id ? updatedPatient : p))

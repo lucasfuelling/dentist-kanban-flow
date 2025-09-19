@@ -4,6 +4,7 @@ import {
   BellRing,
   MoveRight,
   SendHorizontal,
+  ExternalLink,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Patient } from "@/types/patient";
@@ -64,19 +65,18 @@ export function PatientCard({ patient }: PatientCardProps) {
           )}
         </div>
 
-        {patient.pdfFile && (
-          <div className="flex items-center text-primary text-xs">
+        {patient.pdfUrl && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(patient.pdfUrl, '_blank', 'noopener,noreferrer');
+            }}
+            className="flex items-center text-primary text-xs hover:text-primary/80 transition-colors p-1 rounded hover:bg-primary/5"
+            title="PDF öffnen"
+          >
             <FileText className="h-3 w-3 mr-1" />
-            <a
-              href={URL.createObjectURL(patient.pdfFile)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="truncate max-w-[80px] underline hover:text-primary/80"
-              onClick={(e) => e.stopPropagation()} // Prevents drag if needed
-            >
-              {patient.pdfFile.name}
-            </a>
-          </div>
+            <ExternalLink className="h-2.5 w-2.5" />
+          </button>
         )}
       </div>
     </Card>
