@@ -35,11 +35,7 @@ const generatePdfUrl = async (filePath: string): Promise<string | undefined> => 
       return undefined;
     }
     
-    // Construct full HTTPS URL to avoid Chrome security issues
-    const fullUrl = `https://fjrdillreulrmtdtwnth.supabase.co/storage/v1${data.signedUrl}`;
-    console.log('Generated PDF URL:', fullUrl);
-    
-    return fullUrl;
+    return data.signedUrl;
   } catch (error) {
     console.error('Error generating signed URL:', error);
     return undefined;
