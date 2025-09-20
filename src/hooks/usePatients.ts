@@ -35,7 +35,12 @@ const generatePdfUrl = async (filePath: string): Promise<string | undefined> => 
       return undefined;
     }
     
-    return data.signedUrl;
+    // Convert relative signed URL to full HTTPS URL
+    const fullUrl = data.signedUrl.startsWith('http') 
+      ? data.signedUrl 
+      : `https://fjrdillreulrmtdtwnth.supabase.co${data.signedUrl}`;
+    
+    return fullUrl;
   } catch (error) {
     console.error('Error generating signed URL:', error);
     return undefined;
