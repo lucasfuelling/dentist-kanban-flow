@@ -70,8 +70,15 @@ export function PatientCard({ patient }: PatientCardProps) {
             href={patient.pdfUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center text-primary text-xs hover:text-primary/80 transition-colors p-1 rounded hover:bg-primary/5"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              // Open immediately to preserve user gesture context
+              window.open(patient.pdfUrl, '_blank', 'noopener,noreferrer');
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onDragStart={(e) => e.preventDefault()}
+            className="flex items-center text-primary text-xs hover:text-primary/80 transition-colors p-1 rounded hover:bg-primary/5 cursor-pointer"
             title="PDF öffnen"
           >
             <FileText className="h-3 w-3 mr-1" />
