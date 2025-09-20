@@ -66,17 +66,17 @@ export function PatientCard({ patient }: PatientCardProps) {
         </div>
 
         {patient.pdfUrl && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(patient.pdfUrl, '_blank', 'noopener,noreferrer');
-            }}
+          <a
+            href={patient.pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="flex items-center text-primary text-xs hover:text-primary/80 transition-colors p-1 rounded hover:bg-primary/5"
             title="PDF öffnen"
           >
             <FileText className="h-3 w-3 mr-1" />
             <ExternalLink className="h-2.5 w-2.5" />
-          </button>
+          </a>
         )}
       </div>
     </Card>
