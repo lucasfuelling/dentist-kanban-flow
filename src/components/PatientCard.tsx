@@ -19,7 +19,7 @@ interface PatientCardProps {
 
 export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
-  
+
   const truncateNotes = (notes: string, maxLength: number = 40) => {
     if (!notes) return notes;
     if (notes.length <= maxLength) return notes;
@@ -61,7 +61,7 @@ export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
           </div>
           {patient.notes && (
             <div className="text-destructive text-xs mt-1">
-              {truncateNotes(patient.notes, 40)}
+              {truncateNotes(patient.notes, 35)}
             </div>
           )}
           {patient.email && (
@@ -103,7 +103,7 @@ export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
               e.stopPropagation();
               e.preventDefault();
               // Open immediately to preserve user gesture context
-              window.open(patient.pdfUrl, '_blank', 'noopener,noreferrer');
+              window.open(patient.pdfUrl, "_blank", "noopener,noreferrer");
             }}
             onMouseDown={(e) => e.stopPropagation()}
             onDragStart={(e) => e.preventDefault()}
