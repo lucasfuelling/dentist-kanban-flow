@@ -5,15 +5,20 @@ import {
   MoveRight,
   SendHorizontal,
   ExternalLink,
+  StickyNote,
 } from "lucide-react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Patient } from "@/types/patient";
+import { PatientNotesModal } from "./PatientNotesModal";
 
 interface PatientCardProps {
   patient: Patient;
+  onUpdateNotes: (patientId: string, notes: string) => void;
 }
 
-export function PatientCard({ patient }: PatientCardProps) {
+export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
+  const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const calculateDaysSince = (date: string) => {
     const targetDate = new Date(date);
     const now = new Date();
@@ -32,9 +37,26 @@ export function PatientCard({ patient }: PatientCardProps) {
     <Card className="bg-kanban-card hover:bg-kanban-card-hover border border-border shadow-sm hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing p-4">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground text-sm leading-tight">
-            {patient.name}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-foreground text-sm leading-tight">
+              {patient.name}
+            </h3>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsNotesModalOpen(true);
+              }}
+              className="text-muted-foreground hover:text-primary transition-colors p-1 rounded hover:bg-primary/5"
+              title="Notizen bearbeiten"
+            >
+              <StickyNote className="h-3 w-3" />
+            </button>
+          </div>
+          {patient.notes && (
+            <div className="text-destructive text-xs mt-1 truncate">
+              {patient.notes}
+            </div>
+          )}
           {patient.email && (
             <div className="flex items-center text-muted-foreground text-xs mt-1">
               <Mail className="h-3 w-3 mr-1" />
@@ -86,6 +108,13 @@ export function PatientCard({ patient }: PatientCardProps) {
           </a>
         )}
       </div>
+
+      <PatientNotesModal
+        patient={patient}
+        isOpen={isNotesModalOpen}
+        onClose={() => setIsNotesModalOpen(false)}
+        onSave={onUpdateNotes}
+      />
     </Card>
   );
 }

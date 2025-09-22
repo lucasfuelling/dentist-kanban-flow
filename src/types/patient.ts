@@ -9,4 +9,5 @@ export interface Patient {
   status: PatientStatus;
   createdAt: string;
   movedAt?: string; // When moved to "reminded" status
+  notes?: string;
 }

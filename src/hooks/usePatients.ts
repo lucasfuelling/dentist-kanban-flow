@@ -22,6 +22,7 @@ interface PatientRecord {
     | "terminated"
     | "no_response"; // Adjust to actual enum/string if needed
   user_id?: string;
+  notes?: string;
 }
 // Helper function to generate signed URL for PDF
 const generatePdfUrl = async (filePath: string): Promise<string | undefined> => {
@@ -67,6 +68,7 @@ const formatPatient = async (record: PatientRecord): Promise<Patient> => {
     status: record.status as PatientStatus,
     createdAt: record.date_created,
     movedAt: record.date_reminded || undefined,
+    notes: record.notes || undefined,
   };
 };
 
@@ -426,6 +428,52 @@ export const usePatients = () => {
     }
   }, [user?.id, patients]);
 
+  // Update patient notes with optimistic update
+  const updatePatientNotes = useCallback(
+    async (patientId: string, notes: string) => {
+      if (!user?.id) return;
+
+      // Find current patient
+      const currentPatient = patients.find((p) => p.id === patientId);
+      if (!currentPatient) return;
+
+      // Optimistically update local state
+      const updatedPatient = {
+        ...currentPatient,
+        notes: notes.trim() || undefined,
+      };
+
+      setPatients((prev) =>
+        prev.map((p) => (p.id === patientId ? updatedPatient : p))
+      );
+
+      try {
+        const { error } = await supabase
+          .from("data")
+          .update({ notes: notes.trim() || null } as any)
+          .eq("patient_id", parseInt(patientId))
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+      } catch (error) {
+        console.error("Error updating patient notes:", error);
+
+        // Revert optimistic update on error
+        setPatients((prev) =>
+          prev.map((p) => (p.id === patientId ? currentPatient : p))
+        );
+
+        toast({
+          title: "Fehler beim Speichern",
+          description: "Notizen konnten nicht gespeichert werden.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    [user?.id, patients]
+  );
+
   return {
     patients,
     loading,
@@ -433,6 +481,7 @@ export const usePatients = () => {
     movePatient,
     archivePatient,
     deleteArchivedPatients,
+    updatePatientNotes,
     refetch: fetchPatients,
   };
 };
