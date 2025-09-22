@@ -19,6 +19,13 @@ interface PatientCardProps {
 
 export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+  
+  const truncateNotes = (notes: string, maxLength: number = 40) => {
+    if (!notes) return notes;
+    if (notes.length <= maxLength) return notes;
+    return notes.substring(0, maxLength) + "...";
+  };
+
   const calculateDaysSince = (date: string) => {
     const targetDate = new Date(date);
     const now = new Date();
@@ -53,8 +60,8 @@ export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
             </button>
           </div>
           {patient.notes && (
-            <div className="text-destructive text-xs mt-1 truncate">
-              {patient.notes}
+            <div className="text-destructive text-xs mt-1">
+              {truncateNotes(patient.notes, 40)}
             </div>
           )}
           {patient.email && (
