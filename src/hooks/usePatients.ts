@@ -365,6 +365,46 @@ export const usePatients = () => {
     }
   }, [fetchPatients, user?.id]);
 
+  // Update patient notes with optimistic update
+  const updatePatientNotes = useCallback(async (patientId: string, notes: string) => {
+    if (!user?.id) return;
+
+    // Optimistic update
+    setPatients(prevPatients =>
+      prevPatients.map(patient =>
+        patient.id === patientId ? { ...patient, notes } : patient
+      )
+    );
+
+    try {
+      const { error } = await supabase
+        .from('data')
+        .update({ notes } as any)
+        .eq('patient_id', parseInt(patientId))
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating patient notes:', error);
+      
+      // Revert optimistic update
+      const originalPatient = patients.find(p => p.id === patientId);
+      if (originalPatient) {
+        setPatients(prevPatients =>
+          prevPatients.map(patient =>
+            patient.id === patientId ? { ...patient, notes: originalPatient.notes } : patient
+          )
+        );
+      }
+      
+      toast({
+        title: "Fehler",
+        description: "Notiz konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      });
+    }
+  }, [user?.id, patients]);
+
   // Delete archived patients with optimistic update
   const deleteArchivedPatients = useCallback(async () => {
     if (!user?.id) return;
@@ -432,6 +472,7 @@ export const usePatients = () => {
     createPatient,
     movePatient,
     archivePatient,
+    updatePatientNotes,
     deleteArchivedPatients,
     refetch: fetchPatients,
   };

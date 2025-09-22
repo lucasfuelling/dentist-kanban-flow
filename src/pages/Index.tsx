@@ -7,7 +7,7 @@ import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const { patients, loading, createPatient, movePatient, archivePatient, deleteArchivedPatients } = usePatients();
+  const { patients, loading, createPatient, movePatient, archivePatient, updatePatientNotes, deleteArchivedPatients } = usePatients();
 
   const handleSignOut = async () => {
     try {
@@ -54,6 +54,7 @@ const Index = () => {
           onCreatePatient={createPatient}
           onMovePatient={movePatient}
           onArchivePatient={archivePatient}
+          onUpdatePatientNotes={updatePatientNotes}
           onDeleteArchived={deleteArchivedPatients}
         />
       </main>

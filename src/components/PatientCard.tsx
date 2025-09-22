@@ -8,12 +8,14 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Patient } from "@/types/patient";
+import { PatientNotes } from "@/components/PatientNotes";
 
 interface PatientCardProps {
   patient: Patient;
+  onNotesChange: (patientId: string, notes: string) => void;
 }
 
-export function PatientCard({ patient }: PatientCardProps) {
+export function PatientCard({ patient, onNotesChange }: PatientCardProps) {
   const calculateDaysSince = (date: string) => {
     const targetDate = new Date(date);
     const now = new Date();
@@ -35,6 +37,13 @@ export function PatientCard({ patient }: PatientCardProps) {
           <h3 className="font-semibold text-foreground text-sm leading-tight">
             {patient.name}
           </h3>
+          
+          <PatientNotes
+            notes={patient.notes}
+            onNotesChange={(notes) => onNotesChange(patient.id, notes)}
+            patientName={patient.name}
+          />
+          
           {patient.email && (
             <div className="flex items-center text-muted-foreground text-xs mt-1">
               <Mail className="h-3 w-3 mr-1" />
