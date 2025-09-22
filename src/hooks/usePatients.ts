@@ -382,6 +382,24 @@ export const usePatients = () => {
     ));
 
     try {
+      // Collect PDF file paths from archived patients for deletion
+      const pdfFilesToDelete = archivedPatients
+        .filter(patient => patient.pdfFilePath)
+        .map(patient => patient.pdfFilePath!);
+
+      // Delete PDF files from storage if any exist
+      if (pdfFilesToDelete.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from('Cost_estimates')
+          .remove(pdfFilesToDelete);
+
+        if (storageError) {
+          console.error('Error deleting PDF files:', storageError);
+          // Continue with database deletion even if storage deletion fails
+        }
+      }
+
+      // Delete database records
       const { error } = await supabase
         .from('data')
         .delete()
@@ -392,7 +410,7 @@ export const usePatients = () => {
 
       toast({
         title: "Erfolgreich gelöscht",
-        description: `${archivedPatients.length} archivierte Einträge wurden gelöscht.`,
+        description: `${archivedPatients.length} archivierte Einträge und zugehörige Dateien wurden gelöscht.`,
       });
     } catch (error) {
       console.error('Error deleting archived patients:', error);
