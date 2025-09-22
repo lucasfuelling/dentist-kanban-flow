@@ -365,6 +365,7 @@ export const usePatients = () => {
     }
   }, [fetchPatients, user?.id]);
 
+
   // Update patient notes with optimistic update
   const updatePatientNotes = useCallback(async (patientId: string, notes: string) => {
     if (!user?.id) return;
