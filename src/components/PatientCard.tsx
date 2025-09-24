@@ -7,6 +7,7 @@ import {
   ExternalLink,
   StickyNote,
   Loader2,
+  Check,
 } from "lucide-react";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -23,6 +24,7 @@ interface PatientCardProps {
 export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const { configuration } = useConfiguration();
   const { toast } = useToast();
 
@@ -92,6 +94,7 @@ export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
         title: "Email sent",
         description: `Email sent successfully to ${patient.email}`,
       });
+      setEmailSent(true);
     } catch (error) {
       console.error('Error sending email:', error);
       toast({
@@ -148,6 +151,8 @@ export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
               >
                 {sendingEmail ? (
                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : emailSent ? (
+                  <Check className="h-3 w-3 mr-1 text-green-600" />
                 ) : (
                   <Mail className="h-3 w-3 mr-1" />
                 )}
