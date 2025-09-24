@@ -1,12 +1,16 @@
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { useAuth } from "@/hooks/useAuth";
 import { usePatients } from "@/hooks/usePatients";
+import { useRoles } from "@/hooks/useRoles";
 import { Button } from "@/components/ui/button";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Settings } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useRoles();
+  const navigate = useNavigate();
   const { patients, loading, createPatient, movePatient, archivePatient, deleteArchivedPatients, updatePatientNotes } = usePatients();
 
   const handleSignOut = async () => {
@@ -34,15 +38,28 @@ const Index = () => {
             <User className="h-5 w-5 text-primary" />
             <span className="font-medium">Willkommen</span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSignOut}
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Abmelden
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/settings")}
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Abmelden
+            </Button>
+          </div>
         </div>
       </header>
 

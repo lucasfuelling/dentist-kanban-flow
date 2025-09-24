@@ -23,6 +23,7 @@ export type Database = {
           email: string | null
           first_name: string | null
           last_name: string
+          notes: string | null
           patient_id: number
           pdf_file_path: string | null
           status: Database["public"]["Enums"]["Kanban"]
@@ -36,6 +37,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           last_name: string
+          notes?: string | null
           patient_id?: number
           pdf_file_path?: string | null
           status?: Database["public"]["Enums"]["Kanban"]
@@ -49,9 +51,55 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           last_name?: string
+          notes?: string | null
           patient_id?: number
           pdf_file_path?: string | null
           status?: Database["public"]["Enums"]["Kanban"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      system_configurations: {
+        Row: {
+          created_at: string | null
+          email_template: string | null
+          id: string
+          updated_at: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_template?: string | null
+          id?: string
+          updated_at?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_template?: string | null
+          id?: string
+          updated_at?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: string
           user_id?: string
         }
         Relationships: []

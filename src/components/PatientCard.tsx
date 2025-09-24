@@ -6,11 +6,14 @@ import {
   SendHorizontal,
   ExternalLink,
   StickyNote,
+  Loader2,
 } from "lucide-react";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Patient } from "@/types/patient";
 import { PatientNotesModal } from "./PatientNotesModal";
+import { useConfiguration } from "@/hooks/useConfiguration";
+import { useToast } from "@/hooks/use-toast";
 
 interface PatientCardProps {
   patient: Patient;
@@ -19,6 +22,9 @@ interface PatientCardProps {
 
 export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const { configuration } = useConfiguration();
+  const { toast } = useToast();
 
   const truncateNotes = (notes: string, maxLength: number = 40) => {
     if (!notes) return notes;
@@ -31,6 +37,71 @@ export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - targetDate.getTime());
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const handleSendEmail = async () => {
+    if (!configuration?.webhook_url || !configuration?.email_template) {
+      toast({
+        variant: "destructive",
+        title: "Configuration missing",
+        description: "Please configure webhook URL and email template in settings.",
+      });
+      return;
+    }
+
+    if (!patient.email) {
+      toast({
+        variant: "destructive",
+        title: "No email address",
+        description: "This patient doesn't have an email address.",
+      });
+      return;
+    }
+
+    try {
+      setSendingEmail(true);
+      
+      // Replace placeholders in email template
+      const nameParts = patient.name.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      const emailText = configuration.email_template
+        .replace(/\{\{firstName\}\}/g, firstName)
+        .replace(/\{\{lastName\}\}/g, lastName)
+        .replace(/\{\{email\}\}/g, patient.email || '');
+
+      const response = await fetch(configuration.webhook_url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email: patient.email,
+          emailText,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Email sent",
+        description: `Email sent successfully to ${patient.email}`,
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast({
+        variant: "destructive",
+        title: "Error sending email",
+        description: "There was a problem sending the email.",
+      });
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   const relevantDate =
@@ -66,8 +137,22 @@ export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
           )}
           {patient.email && (
             <div className="flex items-center text-muted-foreground text-xs mt-1">
-              <Mail className="h-3 w-3 mr-1" />
-              <span className="truncate">{patient.email}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSendEmail();
+                }}
+                disabled={sendingEmail}
+                className="flex items-center hover:text-primary transition-colors disabled:opacity-50"
+                title="Send email to patient"
+              >
+                {sendingEmail ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <Mail className="h-3 w-3 mr-1" />
+                )}
+                <span className="truncate">{patient.email}</span>
+              </button>
             </div>
           )}
         </div>
