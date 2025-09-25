@@ -11,7 +11,16 @@ const Index = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useRoles();
   const navigate = useNavigate();
-  const { patients, loading, createPatient, movePatient, archivePatient, deleteArchivedPatients, updatePatientNotes, updateEmailSentStatus } = usePatients();
+  const {
+    patients,
+    loading,
+    createPatient,
+    movePatient,
+    archivePatient,
+    deleteArchivedPatients,
+    updatePatientNotes,
+    updateEmailSentStatus,
+  } = usePatients();
 
   const handleSignOut = async () => {
     try {
@@ -47,7 +56,7 @@ const Index = () => {
                 className="flex items-center gap-2"
               >
                 <Settings className="h-4 w-4" />
-                Settings
+                Einstellungen
               </Button>
             )}
             <Button

@@ -64,10 +64,10 @@ export const EmailConfiguration = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Email Konfiguration</CardTitle>
+        <CardTitle>Email Vorlage</CardTitle>
         <CardDescription>
-          Configure the webhook URL and email template for sending patient
-          emails.
+          Bitte konfiguriere die Webhook URL und die Email Vorlage f&uuml;r
+          Patienten-Benachrichtigungen.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -86,14 +86,15 @@ export const EmailConfiguration = () => {
           <Label htmlFor="email-template">Email Vorlage</Label>
           <Textarea
             id="email-template"
-            placeholder="Hello {{firstName}} {{lastName}},&#10;&#10;Hier kommt die Vorlage. Zeilenumbruch mit<br/> &#10;&#10;Best regards,&#10;The Team"
+            placeholder="Hallo {{firstName}} {{lastName}},&#10;&#10;Hier kommt die Vorlage. Zeilenumbruch mit<br/> &#10;&#10;Best regards,&#10;The Team"
             value={emailTemplate}
             onChange={(e) => setEmailTemplate(e.target.value)}
             rows={8}
           />
           <p className="text-sm text-muted-foreground">
-            Use {`{{firstName}}`}, {`{{lastName}}`}, and {`{{email}}`} as
-            placeholders for patient data.
+            Benutze {`{{firstName}}`}, {`{{lastName}}`}, und {`{{email}}`} als
+            Platzhalter f&uuml;r Patienten-Daten.&#10;Zeilenumbruch mit
+            &#34;&lt;br/&gt;&#34;.
           </p>
         </div>
 

@@ -21,11 +21,11 @@ const Settings = () => {
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              Zurück
             </Button>
             <div className="flex items-center gap-2">
               <SettingsIcon className="h-5 w-5 text-primary" />
-              <span className="font-medium">Admin Settings</span>
+              <span className="font-medium">Einstellungen</span>
             </div>
           </div>
         </div>
@@ -35,7 +35,7 @@ const Settings = () => {
       <main className="container mx-auto p-4">
         <Tabs defaultValue="email" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="email">Email Configuration</TabsTrigger>
+            <TabsTrigger value="email">Email Vorlage</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
           </TabsList>
 
