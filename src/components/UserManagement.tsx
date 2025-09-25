@@ -1,9 +1,21 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useUserManagement } from "@/hooks/useUserManagement";
 import { useRoles } from "@/hooks/useRoles";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +26,7 @@ export const UserManagement = () => {
   const { users, loading, createUser, refetch } = useUserManagement();
   const { assignRole, removeRole } = useRoles();
   const { toast } = useToast();
-  
+
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserRole, setNewUserRole] = useState("user");
@@ -32,7 +44,11 @@ export const UserManagement = () => {
 
     try {
       setCreating(true);
-      const { user, error } = await createUser(newUserEmail, newUserPassword, newUserRole);
+      const { user, error } = await createUser(
+        newUserEmail,
+        newUserPassword,
+        newUserRole
+      );
 
       if (error) {
         throw error;
@@ -43,7 +59,7 @@ export const UserManagement = () => {
           title: "User created",
           description: `User ${newUserEmail} has been created successfully.`,
         });
-        
+
         setNewUserEmail("");
         setNewUserPassword("");
         setNewUserRole("user");
@@ -59,18 +75,22 @@ export const UserManagement = () => {
     }
   };
 
-  const handleRoleChange = async (userId: string, currentRoles: string[], newRole: string) => {
+  const handleRoleChange = async (
+    userId: string,
+    currentRoles: string[],
+    newRole: string
+  ) => {
     try {
       // Remove all current roles first
       for (const role of currentRoles) {
         await removeRole(userId, role);
       }
-      
+
       // Add new role
       await assignRole(userId, newRole);
-      
+
       await refetch();
-      
+
       toast({
         title: "Role updated",
         description: "User role has been updated successfully.",
@@ -90,11 +110,9 @@ export const UserManagement = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            Create New User
+            Neuen Benutzer anlegen
           </CardTitle>
-          <CardDescription>
-            Add a new user to the system with the specified role.
-          </CardDescription>
+          <CardDescription>Lege einen neuen Benutzer.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -108,9 +126,9 @@ export const UserManagement = () => {
                 onChange={(e) => setNewUserEmail(e.target.value)}
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="new-user-password">Password</Label>
+              <Label htmlFor="new-user-password">Passwort</Label>
               <Input
                 id="new-user-password"
                 type="password"
@@ -120,9 +138,9 @@ export const UserManagement = () => {
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
-            <Label htmlFor="new-user-role">Role</Label>
+            <Label htmlFor="new-user-role">Rolle</Label>
             <Select value={newUserRole} onValueChange={setNewUserRole}>
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
@@ -134,13 +152,13 @@ export const UserManagement = () => {
             </Select>
           </div>
 
-          <Button 
-            onClick={handleCreateUser} 
+          <Button
+            onClick={handleCreateUser}
             disabled={creating || !newUserEmail || !newUserPassword}
             className="w-full"
           >
             {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create User
+            Benutzer erstellen
           </Button>
         </CardContent>
       </Card>
@@ -149,11 +167,9 @@ export const UserManagement = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            User Management
+            Benutzer Management
           </CardTitle>
-          <CardDescription>
-            Manage existing users and their roles.
-          </CardDescription>
+          <CardDescription>Admin und User Rollen verwalten.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -167,24 +183,34 @@ export const UserManagement = () => {
           ) : (
             <div className="space-y-4">
               {users.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <div>
                       <p className="font-medium">{user.email}</p>
-                      <p className="text-sm text-muted-foreground">ID: {user.id.slice(0, 8)}...</p>
+                      <p className="text-sm text-muted-foreground">
+                        ID: {user.id.slice(0, 8)}...
+                      </p>
                     </div>
                     <div className="flex gap-1">
                       {user.roles?.map((role) => (
-                        <Badge key={role} variant={role === 'admin' ? 'default' : 'secondary'}>
+                        <Badge
+                          key={role}
+                          variant={role === "admin" ? "default" : "secondary"}
+                        >
                           {role}
                         </Badge>
                       ))}
                     </div>
                   </div>
-                  
+
                   <Select
-                    value={user.roles?.[0] || 'user'}
-                    onValueChange={(newRole) => handleRoleChange(user.id, user.roles || [], newRole)}
+                    value={user.roles?.[0] || "user"}
+                    onValueChange={(newRole) =>
+                      handleRoleChange(user.id, user.roles || [], newRole)
+                    }
                   >
                     <SelectTrigger className="w-32">
                       <SelectValue />

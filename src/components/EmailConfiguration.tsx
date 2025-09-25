@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,9 +64,10 @@ export const EmailConfiguration = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Email Configuration</CardTitle>
+        <CardTitle>Email Konfiguration</CardTitle>
         <CardDescription>
-          Configure the webhook URL and email template for sending patient emails.
+          Configure the webhook URL and email template for sending patient
+          emails.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -74,28 +81,25 @@ export const EmailConfiguration = () => {
             onChange={(e) => setWebhookUrl(e.target.value)}
           />
         </div>
-        
+
         <div className="space-y-2">
-          <Label htmlFor="email-template">Email Template</Label>
+          <Label htmlFor="email-template">Email Vorlage</Label>
           <Textarea
             id="email-template"
-            placeholder="Hello {{firstName}} {{lastName}},&#10;&#10;Your email content here...&#10;&#10;Best regards,&#10;The Team"
+            placeholder="Hello {{firstName}} {{lastName}},&#10;&#10;Hier kommt die Vorlage. Zeilenumbruch mit<br/> &#10;&#10;Best regards,&#10;The Team"
             value={emailTemplate}
             onChange={(e) => setEmailTemplate(e.target.value)}
             rows={8}
           />
           <p className="text-sm text-muted-foreground">
-            Use {`{{firstName}}`}, {`{{lastName}}`}, and {`{{email}}`} as placeholders for patient data.
+            Use {`{{firstName}}`}, {`{{lastName}}`}, and {`{{email}}`} as
+            placeholders for patient data.
           </p>
         </div>
 
-        <Button 
-          onClick={handleSave} 
-          disabled={saving}
-          className="w-full"
-        >
+        <Button onClick={handleSave} disabled={saving} className="w-full">
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save Configuration
+          Speichern
         </Button>
       </CardContent>
     </Card>
