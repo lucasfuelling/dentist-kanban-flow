@@ -20,9 +20,10 @@ interface PatientCardProps {
   patient: Patient;
   onUpdateNotes: (patientId: string, notes: string) => void;
   onUpdateEmailSent?: (patientId: string, sent: boolean) => void;
+  onMovePatient?: (patientId: string, newStatus: Patient["status"]) => void;
 }
 
-export function PatientCard({ patient, onUpdateNotes, onUpdateEmailSent }: PatientCardProps) {
+export function PatientCard({ patient, onUpdateNotes, onUpdateEmailSent, onMovePatient }: PatientCardProps) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const { configuration } = useConfiguration();
@@ -98,6 +99,11 @@ export function PatientCard({ patient, onUpdateNotes, onUpdateEmailSent }: Patie
       // Update email sent status in database
       if (onUpdateEmailSent) {
         onUpdateEmailSent(patient.id, true);
+      }
+      
+      // Move patient to "reminded" status
+      if (onMovePatient) {
+        onMovePatient(patient.id, "reminded");
       }
     } catch (error) {
       console.error('Error sending email:', error);

@@ -243,7 +243,7 @@ export function KanbanBoard({
                                       : ""
                                   }`}
                                 >
-                                  <PatientCard patient={patient} onUpdateNotes={onUpdateNotes} onUpdateEmailSent={onUpdateEmailSent} />
+                                  <PatientCard patient={patient} onUpdateNotes={onUpdateNotes} onUpdateEmailSent={onUpdateEmailSent} onMovePatient={onMovePatient} />
                                 </div>
                               )}
                             </Draggable>
@@ -291,7 +291,7 @@ export function KanbanBoard({
                                       : ""
                                   }`}
                                 >
-                                  <PatientCard patient={patient} onUpdateNotes={onUpdateNotes} onUpdateEmailSent={onUpdateEmailSent} />
+                                  <PatientCard patient={patient} onUpdateNotes={onUpdateNotes} onUpdateEmailSent={onUpdateEmailSent} onMovePatient={onMovePatient} />
                                 </div>
                               )}
                             </Draggable>
