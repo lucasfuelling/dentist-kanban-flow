@@ -19,12 +19,12 @@ import { useToast } from "@/hooks/use-toast";
 interface PatientCardProps {
   patient: Patient;
   onUpdateNotes: (patientId: string, notes: string) => void;
+  onUpdateEmailSent?: (patientId: string, sent: boolean) => void;
 }
 
-export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
+export function PatientCard({ patient, onUpdateNotes, onUpdateEmailSent }: PatientCardProps) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
   const { configuration } = useConfiguration();
   const { toast } = useToast();
 
@@ -94,7 +94,11 @@ export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
         title: "Email sent",
         description: `Email sent successfully to ${patient.email}`,
       });
-      setEmailSent(true);
+      
+      // Update email sent status in database
+      if (onUpdateEmailSent) {
+        onUpdateEmailSent(patient.id, true);
+      }
     } catch (error) {
       console.error('Error sending email:', error);
       toast({
@@ -139,7 +143,7 @@ export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
             </div>
           )}
           {patient.email && (
-            <div className="flex items-center text-muted-foreground text-xs mt-1">
+            <div className="flex items-center justify-between text-muted-foreground text-xs mt-1">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -151,13 +155,14 @@ export function PatientCard({ patient, onUpdateNotes }: PatientCardProps) {
               >
                 {sendingEmail ? (
                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                ) : emailSent ? (
-                  <Check className="h-3 w-3 mr-1 text-green-600" />
                 ) : (
                   <Mail className="h-3 w-3 mr-1" />
                 )}
                 <span className="truncate">{patient.email}</span>
               </button>
+              {patient.emailSent && (
+                <Check className="h-3 w-3 text-green-600 ml-1" />
+              )}
             </div>
           )}
         </div>

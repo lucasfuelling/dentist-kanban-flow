@@ -11,7 +11,7 @@ const Index = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useRoles();
   const navigate = useNavigate();
-  const { patients, loading, createPatient, movePatient, archivePatient, deleteArchivedPatients, updatePatientNotes } = usePatients();
+  const { patients, loading, createPatient, movePatient, archivePatient, deleteArchivedPatients, updatePatientNotes, updateEmailSentStatus } = usePatients();
 
   const handleSignOut = async () => {
     try {
@@ -72,6 +72,7 @@ const Index = () => {
           onMovePatient={movePatient}
           onArchivePatient={archivePatient}
           onUpdateNotes={updatePatientNotes}
+          onUpdateEmailSent={updateEmailSentStatus}
           onDeleteArchived={deleteArchivedPatients}
         />
       </main>

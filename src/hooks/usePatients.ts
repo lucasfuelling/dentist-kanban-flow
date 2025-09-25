@@ -23,6 +23,8 @@ interface PatientRecord {
     | "no_response"; // Adjust to actual enum/string if needed
   user_id?: string;
   notes?: string;
+  email_sent?: boolean;
+  email_sent_at?: string;
 }
 // Helper function to generate signed URL for PDF
 const generatePdfUrl = async (filePath: string): Promise<string | undefined> => {
@@ -69,6 +71,8 @@ const formatPatient = async (record: PatientRecord): Promise<Patient> => {
     createdAt: record.date_created,
     movedAt: record.date_reminded || undefined,
     notes: record.notes || undefined,
+    emailSent: record.email_sent || false,
+    emailSentAt: record.email_sent_at || undefined,
   };
 };
 
@@ -474,6 +478,56 @@ export const usePatients = () => {
     [user?.id, patients]
   );
 
+  // Update email sent status with optimistic update
+  const updateEmailSentStatus = useCallback(
+    async (patientId: string, sent: boolean) => {
+      if (!user?.id) return;
+
+      // Find current patient
+      const currentPatient = patients.find((p) => p.id === patientId);
+      if (!currentPatient) return;
+
+      // Optimistically update local state
+      const updatedPatient = {
+        ...currentPatient,
+        emailSent: sent,
+        emailSentAt: sent ? new Date().toISOString() : undefined,
+      };
+
+      setPatients((prev) =>
+        prev.map((p) => (p.id === patientId ? updatedPatient : p))
+      );
+
+      try {
+        const { error } = await supabase
+          .from("data")
+          .update({
+            email_sent: sent,
+            email_sent_at: sent ? new Date().toISOString() : null,
+          } as any)
+          .eq("patient_id", parseInt(patientId))
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+      } catch (error) {
+        console.error("Error updating email sent status:", error);
+
+        // Revert optimistic update on error
+        setPatients((prev) =>
+          prev.map((p) => (p.id === patientId ? currentPatient : p))
+        );
+
+        toast({
+          title: "Fehler beim Speichern",
+          description: "E-Mail-Status konnte nicht gespeichert werden.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    [user?.id, patients]
+  );
+
   return {
     patients,
     loading,
@@ -482,6 +536,7 @@ export const usePatients = () => {
     archivePatient,
     deleteArchivedPatients,
     updatePatientNotes,
+    updateEmailSentStatus,
     refetch: fetchPatients,
   };
 };
