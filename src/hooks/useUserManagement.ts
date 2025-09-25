@@ -17,30 +17,27 @@ export const useUserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // Fetch user roles with profile data
+      // Note: In a real application, you'd need a server-side function to list users
+      // For now, we'll just fetch user roles and show users who have roles
       const { data: userRoles, error } = await supabase
         .from('user_roles')
-        .select(`
-          user_id, 
-          role,
-          profiles!inner(email, display_name)
-        `);
+        .select('user_id, role');
 
       if (error) throw error;
 
-      // Group roles by user_id and include profile data
-      const usersMap = new Map<string, { roles: string[], profile: any }>();
-      userRoles?.forEach(({ user_id, role, profiles }) => {
+      // Group roles by user_id
+      const usersMap = new Map<string, string[]>();
+      userRoles?.forEach(({ user_id, role }) => {
         if (!usersMap.has(user_id)) {
-          usersMap.set(user_id, { roles: [], profile: profiles });
+          usersMap.set(user_id, []);
         }
-        usersMap.get(user_id)!.roles.push(role);
+        usersMap.get(user_id)!.push(role);
       });
 
-      // Create user objects with actual profile data
-      const usersWithRoles: UserWithRoles[] = Array.from(usersMap.entries()).map(([user_id, { roles, profile }]) => ({
+      // Create user objects (simplified - in production you'd fetch actual user data)
+      const usersWithRoles: UserWithRoles[] = Array.from(usersMap.entries()).map(([user_id, roles]) => ({
         id: user_id,
-        email: profile?.display_name || profile?.email || `user-${user_id.slice(0, 8)}@example.com`,
+        email: `user-${user_id.slice(0, 8)}@example.com`, // Placeholder
         roles,
         // Other required User properties as placeholders
         aud: 'authenticated',
