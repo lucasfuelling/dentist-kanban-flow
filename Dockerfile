@@ -1,10 +1,10 @@
 # Stage 1: Build the app
-FROM node:16-alpine AS build-stage
+FROM node:24-alpine AS build-stage
 
 WORKDIR /app
 
 # Copy package files and install dependencies
-COPY package*.json ./
+COPY package.json ./
 RUN npm install
 
 # Copy app source code
