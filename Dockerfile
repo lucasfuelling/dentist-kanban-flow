@@ -4,8 +4,8 @@ FROM node:24-alpine AS build-stage
 WORKDIR /app
 
 # Copy package files and install dependencies
-COPY package.json ./
-RUN npm install
+COPY package*.json ./
+RUN npm ci
 
 # Copy app source code
 COPY . .

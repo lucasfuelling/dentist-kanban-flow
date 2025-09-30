@@ -1,0 +1,16 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+build
+.next
+out
+.git
+npm-debug.log
+coverage
+logs
+
+# Environment variables and secrets
+.env
+.dockerignore
