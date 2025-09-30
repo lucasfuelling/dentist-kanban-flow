@@ -23,7 +23,12 @@ interface PatientCardProps {
   onMovePatient?: (patientId: string, newStatus: Patient["status"]) => void;
 }
 
-export function PatientCard({ patient, onUpdateNotes, onUpdateEmailSent, onMovePatient }: PatientCardProps) {
+export function PatientCard({
+  patient,
+  onUpdateNotes,
+  onUpdateEmailSent,
+  onMovePatient,
+}: PatientCardProps) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const { configuration } = useConfiguration();
@@ -47,7 +52,8 @@ export function PatientCard({ patient, onUpdateNotes, onUpdateEmailSent, onMoveP
       toast({
         variant: "destructive",
         title: "Configuration missing",
-        description: "Please configure webhook URL and email template in settings.",
+        description:
+          "Please configure webhook URL and email template in settings.",
       });
       return;
     }
@@ -63,21 +69,21 @@ export function PatientCard({ patient, onUpdateNotes, onUpdateEmailSent, onMoveP
 
     try {
       setSendingEmail(true);
-      
+
       // Replace placeholders in email template
-      const nameParts = patient.name.split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-      
+      const nameParts = patient.name.split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
       const emailText = configuration.email_template
         .replace(/\{\{firstName\}\}/g, firstName)
         .replace(/\{\{lastName\}\}/g, lastName)
-        .replace(/\{\{email\}\}/g, patient.email || '');
+        .replace(/\{\{email\}\}/g, patient.email || "");
 
       const response = await fetch(configuration.webhook_url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           firstName,
@@ -95,18 +101,18 @@ export function PatientCard({ patient, onUpdateNotes, onUpdateEmailSent, onMoveP
         title: "Email sent",
         description: `Email sent successfully to ${patient.email}`,
       });
-      
+
       // Update email sent status in database
       if (onUpdateEmailSent) {
         onUpdateEmailSent(patient.id, true);
       }
-      
+
       // Move patient to "reminded" status
       if (onMovePatient) {
         onMovePatient(patient.id, "reminded");
       }
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error("Error sending email:", error);
       toast({
         variant: "destructive",
         title: "Error sending email",
@@ -149,7 +155,7 @@ export function PatientCard({ patient, onUpdateNotes, onUpdateEmailSent, onMoveP
             </div>
           )}
           {patient.email && (
-            <div className="flex items-center justify-between text-muted-foreground text-xs mt-1">
+            <div className="flex text-muted-foreground text-xs mt-1">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -167,7 +173,7 @@ export function PatientCard({ patient, onUpdateNotes, onUpdateEmailSent, onMoveP
                 <span className="truncate">{patient.email}</span>
               </button>
               {patient.emailSent && (
-                <Check className="h-3 w-3 text-green-600 ml-1" />
+                <Check className="h-4 w-4 text-green-600 ml-1" />
               )}
             </div>
           )}
