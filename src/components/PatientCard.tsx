@@ -8,6 +8,7 @@ import {
   StickyNote,
   Loader2,
   Check,
+  CheckCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -187,9 +188,10 @@ export function PatientCard({
               </button>
               {patient.emailSentCount > 0 && (
                 <div className="flex items-center ml-1">
-                  <Check className="h-4 w-4 text-green-600" />
-                  {patient.emailSentCount >= 2 && (
-                    <Check className="h-4 w-4 text-green-600 -ml-2" />
+                  {patient.emailSentCount === 1 ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <CheckCheck className="h-4 w-4 text-green-600" />
                   )}
                 </div>
               )}
