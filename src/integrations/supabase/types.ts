@@ -21,8 +21,8 @@ export type Database = {
           date_created: string
           date_reminded: string | null
           email: string | null
-          email_sent: boolean | null
           email_sent_at: string | null
+          email_sent_count: number | null
           first_name: string | null
           last_name: string
           notes: string | null
@@ -37,8 +37,8 @@ export type Database = {
           date_created?: string
           date_reminded?: string | null
           email?: string | null
-          email_sent?: boolean | null
           email_sent_at?: string | null
+          email_sent_count?: number | null
           first_name?: string | null
           last_name: string
           notes?: string | null
@@ -53,8 +53,8 @@ export type Database = {
           date_created?: string
           date_reminded?: string | null
           email?: string | null
-          email_sent?: boolean | null
           email_sent_at?: string | null
+          email_sent_count?: number | null
           first_name?: string | null
           last_name?: string
           notes?: string | null

@@ -19,14 +19,14 @@ import { useToast } from "@/hooks/use-toast";
 interface PatientCardProps {
   patient: Patient;
   onUpdateNotes: (patientId: string, notes: string) => void;
-  onUpdateEmailSent?: (patientId: string, sent: boolean) => void;
+  onIncrementEmailCount?: (patientId: string) => void;
   onMovePatient?: (patientId: string, newStatus: Patient["status"]) => void;
 }
 
 export function PatientCard({
   patient,
   onUpdateNotes,
-  onUpdateEmailSent,
+  onIncrementEmailCount,
   onMovePatient,
 }: PatientCardProps) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
@@ -102,9 +102,9 @@ export function PatientCard({
         description: `Email sent successfully to ${patient.email}`,
       });
 
-      // Update email sent status in database
-      if (onUpdateEmailSent) {
-        onUpdateEmailSent(patient.id, true);
+      // Increment email sent count in database
+      if (onIncrementEmailCount) {
+        onIncrementEmailCount(patient.id);
       }
 
       // Move patient to "reminded" status
@@ -168,12 +168,17 @@ export function PatientCard({
                 {sendingEmail ? (
                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 ) : (
-                  <Mail className="h-3 w-3 mr-1" />
+                <Mail className="h-3 w-3 mr-1" />
                 )}
                 <span className="truncate">{patient.email}</span>
               </button>
-              {patient.emailSent && (
-                <Check className="h-4 w-4 text-green-600 ml-1" />
+              {patient.emailSentCount && patient.emailSentCount > 0 && (
+                <div className="flex items-center ml-1">
+                  <Check className="h-4 w-4 text-green-600" />
+                  {patient.emailSentCount >= 2 && (
+                    <Check className="h-4 w-4 text-green-600 -ml-2" />
+                  )}
+                </div>
               )}
             </div>
           )}

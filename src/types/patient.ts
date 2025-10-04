@@ -10,6 +10,6 @@ export interface Patient {
   createdAt: string;
   movedAt?: string; // When moved to "reminded" status
   notes?: string;
-  emailSent?: boolean;
+  emailSentCount?: number;
   emailSentAt?: string;
 }

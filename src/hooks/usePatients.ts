@@ -23,7 +23,7 @@ interface PatientRecord {
     | "no_response"; // Adjust to actual enum/string if needed
   user_id?: string;
   notes?: string;
-  email_sent?: boolean;
+  email_sent_count?: number;
   email_sent_at?: string;
 }
 // Helper function to generate signed URL for PDF
@@ -71,7 +71,7 @@ const formatPatient = async (record: PatientRecord): Promise<Patient> => {
     createdAt: record.date_created,
     movedAt: record.date_reminded || undefined,
     notes: record.notes || undefined,
-    emailSent: record.email_sent || false,
+    emailSentCount: record.email_sent_count || 0,
     emailSentAt: record.email_sent_at || undefined,
   };
 };
@@ -478,20 +478,22 @@ export const usePatients = () => {
     [user?.id, patients]
   );
 
-  // Update email sent status with optimistic update
-  const updateEmailSentStatus = useCallback(
-    async (patientId: string, sent: boolean) => {
+  // Increment email sent count with optimistic update
+  const incrementEmailSentCount = useCallback(
+    async (patientId: string) => {
       if (!user?.id) return;
 
       // Find current patient
       const currentPatient = patients.find((p) => p.id === patientId);
       if (!currentPatient) return;
 
+      const newCount = (currentPatient.emailSentCount || 0) + 1;
+
       // Optimistically update local state
       const updatedPatient = {
         ...currentPatient,
-        emailSent: sent,
-        emailSentAt: sent ? new Date().toISOString() : undefined,
+        emailSentCount: newCount,
+        emailSentAt: new Date().toISOString(),
       };
 
       setPatients((prev) =>
@@ -502,15 +504,15 @@ export const usePatients = () => {
         const { error } = await supabase
           .from("data")
           .update({
-            email_sent: sent,
-            email_sent_at: sent ? new Date().toISOString() : null,
+            email_sent_count: newCount,
+            email_sent_at: new Date().toISOString(),
           } as any)
           .eq("patient_id", parseInt(patientId))
           .eq("user_id", user.id);
 
         if (error) throw error;
       } catch (error) {
-        console.error("Error updating email sent status:", error);
+        console.error("Error incrementing email sent count:", error);
 
         // Revert optimistic update on error
         setPatients((prev) =>
@@ -536,7 +538,7 @@ export const usePatients = () => {
     archivePatient,
     deleteArchivedPatients,
     updatePatientNotes,
-    updateEmailSentStatus,
+    incrementEmailSentCount,
     refetch: fetchPatients,
   };
 };

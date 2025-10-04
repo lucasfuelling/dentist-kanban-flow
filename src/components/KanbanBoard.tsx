@@ -39,7 +39,7 @@ interface KanbanBoardProps {
     archiveType: "terminated" | "no_response"
   ) => Promise<void>;
   onUpdateNotes: (patientId: string, notes: string) => Promise<void>;
-  onUpdateEmailSent?: (patientId: string, sent: boolean) => Promise<void>;
+  onIncrementEmailCount?: (patientId: string) => Promise<void>;
   onDeleteArchived?: () => Promise<void>;
 }
 
@@ -50,7 +50,7 @@ export function KanbanBoard({
   onMovePatient,
   onArchivePatient,
   onUpdateNotes,
-  onUpdateEmailSent,
+  onIncrementEmailCount,
   onDeleteArchived,
 }: KanbanBoardProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -243,7 +243,7 @@ export function KanbanBoard({
                                       : ""
                                   }`}
                                 >
-                                  <PatientCard patient={patient} onUpdateNotes={onUpdateNotes} onUpdateEmailSent={onUpdateEmailSent} onMovePatient={onMovePatient} />
+                                  <PatientCard patient={patient} onUpdateNotes={onUpdateNotes} onIncrementEmailCount={onIncrementEmailCount} onMovePatient={onMovePatient} />
                                 </div>
                               )}
                             </Draggable>
@@ -291,7 +291,7 @@ export function KanbanBoard({
                                       : ""
                                   }`}
                                 >
-                                  <PatientCard patient={patient} onUpdateNotes={onUpdateNotes} onUpdateEmailSent={onUpdateEmailSent} onMovePatient={onMovePatient} />
+                                  <PatientCard patient={patient} onUpdateNotes={onUpdateNotes} onIncrementEmailCount={onIncrementEmailCount} onMovePatient={onMovePatient} />
                                 </div>
                               )}
                             </Draggable>
