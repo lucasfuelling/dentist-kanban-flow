@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmailConfiguration } from "@/components/EmailConfiguration";
 import { UserManagement } from "@/components/UserManagement";
+import { DsgvoManagement } from "@/components/DsgvoManagement";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Settings as SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -34,9 +35,10 @@ const Settings = () => {
       {/* Main Content */}
       <main className="container mx-auto p-4">
         <Tabs defaultValue="email" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="email">Email Vorlage</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="dsgvo">DSGVO</TabsTrigger>
           </TabsList>
 
           <TabsContent value="email" className="space-y-6">
@@ -45,6 +47,10 @@ const Settings = () => {
 
           <TabsContent value="users" className="space-y-6">
             <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="dsgvo" className="space-y-6">
+            <DsgvoManagement />
           </TabsContent>
         </Tabs>
       </main>
