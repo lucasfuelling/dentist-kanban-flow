@@ -48,6 +48,15 @@ export function PatientCard({
   };
 
   const handleSendEmail = async () => {
+    if (patient.emailSentCount >= 2) {
+      toast({
+        variant: "destructive",
+        title: "Email limit reached",
+        description: "Maximum of 2 emails can be sent to this patient.",
+      });
+      return;
+    }
+
     if (!configuration?.webhook_url || !configuration?.email_template) {
       toast({
         variant: "destructive",
@@ -161,9 +170,13 @@ export function PatientCard({
                   e.stopPropagation();
                   handleSendEmail();
                 }}
-                disabled={sendingEmail}
-                className="flex items-center hover:text-primary transition-colors disabled:opacity-50"
-                title="Send email to patient"
+                disabled={sendingEmail || patient.emailSentCount >= 2}
+                className="flex items-center hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={
+                  patient.emailSentCount >= 2
+                    ? "Maximum emails sent (2/2)"
+                    : "Send email to patient"
+                }
               >
                 {sendingEmail ? (
                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
