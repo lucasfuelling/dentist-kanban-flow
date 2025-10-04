@@ -166,26 +166,29 @@ export function PatientCard({
           )}
           {patient.email && (
             <div className="flex text-muted-foreground text-xs mt-1">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSendEmail();
-                }}
-                disabled={sendingEmail || patient.emailSentCount >= 2}
-                className="flex items-center hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title={
-                  patient.emailSentCount >= 2
-                    ? "Maximum emails sent (2/2)"
-                    : "Send email to patient"
-                }
-              >
-                {sendingEmail ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                ) : (
+              {patient.emailSentCount >= 2 ? (
+                <div className="flex items-center">
                   <Mail className="h-3 w-3 mr-1" />
-                )}
-                <span className="truncate">{patient.email}</span>
-              </button>
+                  <span className="truncate">{patient.email}</span>
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSendEmail();
+                  }}
+                  disabled={sendingEmail}
+                  className="flex items-center hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Send email to patient"
+                >
+                  {sendingEmail ? (
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <Mail className="h-3 w-3 mr-1" />
+                  )}
+                  <span className="truncate">{patient.email}</span>
+                </button>
+              )}
               {patient.emailSentCount > 0 && (
                 <div className="flex items-center ml-1">
                   {patient.emailSentCount === 1 ? (
