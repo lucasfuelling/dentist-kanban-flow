@@ -168,11 +168,11 @@ export function PatientCard({
                 {sendingEmail ? (
                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 ) : (
-                <Mail className="h-3 w-3 mr-1" />
+                  <Mail className="h-3 w-3 mr-1" />
                 )}
                 <span className="truncate">{patient.email}</span>
               </button>
-              {patient.emailSentCount && patient.emailSentCount > 0 && (
+              {patient.emailSentCount > 0 && (
                 <div className="flex items-center ml-1">
                   <Check className="h-4 w-4 text-green-600" />
                   {patient.emailSentCount >= 2 && (
