@@ -58,25 +58,24 @@ export const useUserManagement = () => {
 
   const createUser = async (email: string, password: string, role: string = 'user') => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+      // Call the secure Edge Function to create user with service role
+      const { data, error } = await supabase.functions.invoke('create-user-with-role', {
+        body: { email, password, role }
       });
 
-      if (error) throw error;
-
-      if (data.user) {
-        // Assign role to the new user
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: data.user.id, role });
-
-        if (roleError) throw roleError;
-
-        await fetchUsers();
+      if (error) {
+        console.error('Error creating user:', error);
+        throw error;
       }
 
-      return { user: data.user, error: null };
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      // Refresh the users list
+      await fetchUsers();
+
+      return { user: data?.user, error: null };
     } catch (error) {
       console.error('Error creating user:', error);
       return { user: null, error };
