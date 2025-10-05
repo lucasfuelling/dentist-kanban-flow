@@ -17,14 +17,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUserManagement } from "@/hooks/useUserManagement";
-import { useRoles } from "@/hooks/useRoles";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export const UserManagement = () => {
-  const { users, loading, createUser, refetch } = useUserManagement();
-  const { assignRole, removeRole } = useRoles();
+  const { users, loading, createUser } = useUserManagement();
   const { toast } = useToast();
 
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -75,34 +73,6 @@ export const UserManagement = () => {
     }
   };
 
-  const handleRoleChange = async (
-    userId: string,
-    currentRoles: string[],
-    newRole: string
-  ) => {
-    try {
-      // Remove all current roles first
-      for (const role of currentRoles) {
-        await removeRole(userId, role);
-      }
-
-      // Add new role
-      await assignRole(userId, newRole);
-
-      await refetch();
-
-      toast({
-        title: "Role updated",
-        description: "User role has been updated successfully.",
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error updating role",
-        description: "There was a problem updating the user role.",
-      });
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -194,32 +164,18 @@ export const UserManagement = () => {
                         ID: {user.id.slice(0, 8)}...
                       </p>
                     </div>
-                    <div className="flex gap-1">
-                      {user.roles?.map((role) => (
-                        <Badge
-                          key={role}
-                          variant={role === "admin" ? "default" : "secondary"}
-                        >
-                          {role}
-                        </Badge>
-                      ))}
-                    </div>
                   </div>
 
-                  <Select
-                    value={user.roles?.[0] || "user"}
-                    onValueChange={(newRole) =>
-                      handleRoleChange(user.id, user.roles || [], newRole)
-                    }
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-1">
+                    {user.roles?.map((role) => (
+                      <Badge
+                        key={role}
+                        variant={role === "admin" ? "default" : "secondary"}
+                      >
+                        {role}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
