@@ -1,3 +1,4 @@
+# docker build -t lucasfuelling/dentist-kanban-flow:latest .
 # Stage 1: Build the app
 FROM node:24-alpine AS build-stage
 
