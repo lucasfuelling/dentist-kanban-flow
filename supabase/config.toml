@@ -1,4 +1,1 @@
 project_id = "fjrdillreulrmtdtwnth"
-
-[functions.create-user-with-role]
-verify_jwt = true
