@@ -40,12 +40,12 @@ export const EmailConfiguration = () => {
       const target = e.currentTarget;
       const start = target.selectionStart;
       const end = target.selectionEnd;
-      const newValue = currentValue.substring(0, start) + "<br/>" + currentValue.substring(end);
+      const newValue = currentValue.substring(0, start) + "<br/>\n" + currentValue.substring(end);
       setValue(newValue);
       
-      // Reposition cursor after the inserted <br/>
+      // Reposition cursor after the inserted <br/> and newline
       setTimeout(() => {
-        target.selectionStart = target.selectionEnd = start + 5;
+        target.selectionStart = target.selectionEnd = start + 6;
       }, 0);
     }
   };
