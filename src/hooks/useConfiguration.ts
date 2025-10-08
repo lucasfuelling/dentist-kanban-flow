@@ -5,7 +5,8 @@ import { useAuth } from "./useAuth";
 interface SystemConfiguration {
   id: string;
   webhook_url: string | null;
-  email_template: string | null;
+  email_template_first: string | null;
+  email_template_reminder: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -39,7 +40,7 @@ export const useConfiguration = () => {
     }
   };
 
-  const updateConfiguration = async (updates: Partial<Pick<SystemConfiguration, 'webhook_url' | 'email_template'>>) => {
+  const updateConfiguration = async (updates: Partial<Pick<SystemConfiguration, 'webhook_url' | 'email_template_first' | 'email_template_reminder'>>) => {
     try {
       if (!configuration) {
         // Create new configuration if none exists

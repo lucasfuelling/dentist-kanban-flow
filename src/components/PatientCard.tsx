@@ -58,12 +58,17 @@ export function PatientCard({
       return;
     }
 
-    if (!configuration?.webhook_url || !configuration?.email_template) {
+    // Determine which template to use based on patient status
+    const templateToUse = patient.status === "sent" 
+      ? configuration?.email_template_first 
+      : configuration?.email_template_reminder;
+
+    if (!configuration?.webhook_url || !templateToUse) {
       toast({
         variant: "destructive",
-        title: "Configuration missing",
+        title: "Konfiguration fehlt",
         description:
-          "Please configure webhook URL and email template in settings.",
+          "Bitte konfiguriere Webhook URL und Email-Vorlage in den Einstellungen.",
       });
       return;
     }
@@ -85,7 +90,7 @@ export function PatientCard({
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
 
-      const emailText = configuration.email_template
+      const emailText = templateToUse
         .replace(/\{\{firstName\}\}/g, firstName)
         .replace(/\{\{lastName\}\}/g, lastName)
         .replace(/\{\{email\}\}/g, patient.email || "");
@@ -117,8 +122,8 @@ export function PatientCard({
         onIncrementEmailCount(patient.id);
       }
 
-      // Move patient to "reminded" status
-      if (onMovePatient) {
+      // Move patient to "reminded" status only if currently in "sent"
+      if (onMovePatient && patient.status === "sent") {
         onMovePatient(patient.id, "reminded");
       }
     } catch (error) {

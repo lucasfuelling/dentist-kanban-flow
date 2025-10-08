@@ -68,21 +68,24 @@ export type Database = {
       system_configurations: {
         Row: {
           created_at: string | null
-          email_template: string | null
+          email_template_first: string | null
+          email_template_reminder: string | null
           id: string
           updated_at: string | null
           webhook_url: string | null
         }
         Insert: {
           created_at?: string | null
-          email_template?: string | null
+          email_template_first?: string | null
+          email_template_reminder?: string | null
           id?: string
           updated_at?: string | null
           webhook_url?: string | null
         }
         Update: {
           created_at?: string | null
-          email_template?: string | null
+          email_template_first?: string | null
+          email_template_reminder?: string | null
           id?: string
           updated_at?: string | null
           webhook_url?: string | null

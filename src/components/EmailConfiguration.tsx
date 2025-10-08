@@ -18,13 +18,15 @@ export const EmailConfiguration = () => {
   const { configuration, loading, updateConfiguration } = useConfiguration();
   const { toast } = useToast();
   const [webhookUrl, setWebhookUrl] = useState("");
-  const [emailTemplate, setEmailTemplate] = useState("");
+  const [emailTemplateFirst, setEmailTemplateFirst] = useState("");
+  const [emailTemplateReminder, setEmailTemplateReminder] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (configuration) {
       setWebhookUrl(configuration.webhook_url || "");
-      setEmailTemplate(configuration.email_template || "");
+      setEmailTemplateFirst(configuration.email_template_first || "");
+      setEmailTemplateReminder(configuration.email_template_reminder || "");
     }
   }, [configuration]);
 
@@ -33,18 +35,19 @@ export const EmailConfiguration = () => {
       setSaving(true);
       await updateConfiguration({
         webhook_url: webhookUrl || null,
-        email_template: emailTemplate || null,
+        email_template_first: emailTemplateFirst || null,
+        email_template_reminder: emailTemplateReminder || null,
       });
 
       toast({
-        title: "Configuration saved",
-        description: "Email configuration has been updated successfully.",
+        title: "Konfiguration gespeichert",
+        description: "Email-Konfiguration wurde erfolgreich aktualisiert.",
       });
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error saving configuration",
-        description: "There was a problem updating the configuration.",
+        title: "Fehler beim Speichern",
+        description: "Es gab ein Problem beim Aktualisieren der Konfiguration.",
       });
     } finally {
       setSaving(false);
@@ -64,10 +67,9 @@ export const EmailConfiguration = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Email Vorlage</CardTitle>
+        <CardTitle>Email Vorlagen</CardTitle>
         <CardDescription>
-          Bitte konfiguriere die Webhook URL und die Email Vorlage f&uuml;r
-          Patienten-Benachrichtigungen.
+          Konfiguriere die Webhook URL und zwei Email-Vorlagen: eine für die erste Email und eine für Erinnerungs-Emails.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -83,20 +85,36 @@ export const EmailConfiguration = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email-template">Email Vorlage</Label>
+          <Label htmlFor="email-template-first">Erste Email Vorlage</Label>
           <Textarea
-            id="email-template"
-            placeholder="Hallo {{firstName}} {{lastName}},&#10;&#10;Hier kommt die Vorlage. Zeilenumbruch mit<br/> &#10;&#10;Best regards,&#10;The Team"
-            value={emailTemplate}
-            onChange={(e) => setEmailTemplate(e.target.value)}
-            rows={8}
+            id="email-template-first"
+            placeholder="Hallo {{firstName}} {{lastName}},&#10;&#10;Hier kommt die erste Email Vorlage. Zeilenumbruch mit<br/> &#10;&#10;Beste Grüße,&#10;Das Team"
+            value={emailTemplateFirst}
+            onChange={(e) => setEmailTemplateFirst(e.target.value)}
+            rows={6}
           />
           <p className="text-sm text-muted-foreground">
-            Benutze {`{{firstName}}`}, {`{{lastName}}`}, und {`{{email}}`} als
-            Platzhalter f&uuml;r Patienten-Daten.&#10;Zeilenumbruch mit
-            &#34;&lt;br/&gt;&#34;.
+            Erste Email, die von der &quot;Verschickt&quot;-Spalte gesendet wird.
           </p>
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email-template-reminder">Erinnerungs Email Vorlage</Label>
+          <Textarea
+            id="email-template-reminder"
+            placeholder="Hallo {{firstName}} {{lastName}},&#10;&#10;Hier kommt die Erinnerungs Email Vorlage. Zeilenumbruch mit<br/> &#10;&#10;Beste Grüße,&#10;Das Team"
+            value={emailTemplateReminder}
+            onChange={(e) => setEmailTemplateReminder(e.target.value)}
+            rows={6}
+          />
+          <p className="text-sm text-muted-foreground">
+            Erinnerung, die von der &quot;Erinnert&quot;-Spalte gesendet wird.
+          </p>
+        </div>
+
+        <p className="text-sm text-muted-foreground">
+          Benutze {`{{firstName}}`}, {`{{lastName}}`}, und {`{{email}}`} als Platzhalter für Patienten-Daten. Zeilenumbruch mit &quot;&lt;br/&gt;&quot;.
+        </p>
 
         <Button onClick={handleSave} disabled={saving} className="w-full">
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
