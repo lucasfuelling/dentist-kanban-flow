@@ -119,7 +119,7 @@ export const EmailConfiguration = () => {
               onKeyDown={(e) =>
                 handleKeyDown(e, setEmailTemplateFirst, emailTemplateFirst)
               }
-              rows={6}
+              rows={10}
             />
           </div>
 
@@ -137,7 +137,7 @@ export const EmailConfiguration = () => {
                   emailTemplateReminder
                 )
               }
-              rows={6}
+              rows={10}
             />
           </div>
         </div>
