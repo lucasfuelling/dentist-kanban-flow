@@ -30,6 +30,29 @@ export const EmailConfiguration = () => {
     }
   }, [configuration]);
 
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>,
+    setValue: (value: string) => void,
+    currentValue: string
+  ) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      const target = e.currentTarget;
+      const start = target.selectionStart;
+      const end = target.selectionEnd;
+      const newValue =
+        currentValue.substring(0, start) +
+        "<br/>\n" +
+        currentValue.substring(end);
+      setValue(newValue);
+
+      // Reposition cursor after the inserted <br/> and newline
+      setTimeout(() => {
+        target.selectionStart = target.selectionEnd = start + 6;
+      }, 0);
+    }
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -93,7 +116,10 @@ export const EmailConfiguration = () => {
               placeholder="Hallo {{firstName}} {{lastName}},&#10;&#10;Hier kommt die erste Email Vorlage. Zeilenumbruch mit<br/> &#10;&#10;Beste Grüße,&#10;Das Team"
               value={emailTemplateFirst}
               onChange={(e) => setEmailTemplateFirst(e.target.value)}
-              rows={10}
+              onKeyDown={(e) =>
+                handleKeyDown(e, setEmailTemplateFirst, emailTemplateFirst)
+              }
+              rows={6}
             />
           </div>
 
@@ -104,15 +130,22 @@ export const EmailConfiguration = () => {
               placeholder="Hallo {{firstName}} {{lastName}},&#10;&#10;Hier kommt die Erinnerungs Email Vorlage. Zeilenumbruch mit<br/> &#10;&#10;Beste Grüße,&#10;Das Team"
               value={emailTemplateReminder}
               onChange={(e) => setEmailTemplateReminder(e.target.value)}
-              rows={10}
+              onKeyDown={(e) =>
+                handleKeyDown(
+                  e,
+                  setEmailTemplateReminder,
+                  emailTemplateReminder
+                )
+              }
+              rows={6}
             />
           </div>
         </div>
 
         <p className="text-sm text-muted-foreground">
           Benutze {`{{firstName}}`}, {`{{lastName}}`}, und {`{{email}}`} als
-          Platzhalter für Patienten-Daten. Zeilenumbruch mit
-          &quot;&lt;br/&gt;&quot;.
+          Platzhalter für Patienten-Daten. Drücke Enter für Zeilenumbruch
+          (&lt;br/&gt;) oder Shift+Enter für normale Zeilenumbrüche.
         </p>
 
         <Button onClick={handleSave} disabled={saving} className="w-full">
