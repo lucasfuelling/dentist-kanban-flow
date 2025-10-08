@@ -69,7 +69,8 @@ export const EmailConfiguration = () => {
       <CardHeader>
         <CardTitle>Email Vorlagen</CardTitle>
         <CardDescription>
-          Konfiguriere die Webhook URL und zwei Email-Vorlagen: eine für die erste Email und eine für Erinnerungs-Emails.
+          Konfiguriere die Webhook URL und zwei Email-Vorlagen: eine für die
+          erste Email und eine für Erinnerungs-Emails.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -86,36 +87,32 @@ export const EmailConfiguration = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="email-template-first">Erste Email Vorlage</Label>
+            <Label htmlFor="email-template-first">Erste Email</Label>
             <Textarea
               id="email-template-first"
               placeholder="Hallo {{firstName}} {{lastName}},&#10;&#10;Hier kommt die erste Email Vorlage. Zeilenumbruch mit<br/> &#10;&#10;Beste Grüße,&#10;Das Team"
               value={emailTemplateFirst}
               onChange={(e) => setEmailTemplateFirst(e.target.value)}
-              rows={6}
+              rows={10}
             />
-            <p className="text-sm text-muted-foreground">
-              Erste Email, die von der &quot;Verschickt&quot;-Spalte gesendet wird.
-            </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email-template-reminder">Erinnerungs Email Vorlage</Label>
+            <Label htmlFor="email-template-reminder">Zweite Email</Label>
             <Textarea
               id="email-template-reminder"
               placeholder="Hallo {{firstName}} {{lastName}},&#10;&#10;Hier kommt die Erinnerungs Email Vorlage. Zeilenumbruch mit<br/> &#10;&#10;Beste Grüße,&#10;Das Team"
               value={emailTemplateReminder}
               onChange={(e) => setEmailTemplateReminder(e.target.value)}
-              rows={6}
+              rows={10}
             />
-            <p className="text-sm text-muted-foreground">
-              Erinnerung, die von der &quot;Erinnert&quot;-Spalte gesendet wird.
-            </p>
           </div>
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Benutze {`{{firstName}}`}, {`{{lastName}}`}, und {`{{email}}`} als Platzhalter für Patienten-Daten. Zeilenumbruch mit &quot;&lt;br/&gt;&quot;.
+          Benutze {`{{firstName}}`}, {`{{lastName}}`}, und {`{{email}}`} als
+          Platzhalter für Patienten-Daten. Zeilenumbruch mit
+          &quot;&lt;br/&gt;&quot;.
         </p>
 
         <Button onClick={handleSave} disabled={saving} className="w-full">
