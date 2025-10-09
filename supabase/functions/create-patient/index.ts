@@ -6,7 +6,6 @@ const corsHeaders = {
 };
 
 interface CreatePatientRequest {
-  api_key: string;
   firstName?: string;
   lastName: string;
   email?: string;
@@ -31,17 +30,27 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Parse request body
-    const body: CreatePatientRequest = await req.json();
-
-    // Validate API key
-    if (!body.api_key || body.api_key !== n8nApiKey) {
-      console.error('Invalid or missing API key');
+    // Validate Bearer Token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('Missing or invalid Authorization header');
       return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized: Invalid API key' }),
+        JSON.stringify({ success: false, error: 'Unauthorized: Missing or invalid Authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const token = authHeader.replace('Bearer ', '');
+    if (token !== n8nApiKey) {
+      console.error('Invalid Bearer token');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized: Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse request body
+    const body: CreatePatientRequest = await req.json();
 
     // Validate required fields
     if (!body.lastName || body.lastName.trim() === '') {
