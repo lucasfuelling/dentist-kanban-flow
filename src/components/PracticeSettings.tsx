@@ -21,7 +21,7 @@ export const PracticeSettings = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [dentistName, setDentistName] = useState(
-    configuration?.dentist_name || "Dr. Leue"
+    configuration?.dentist_name || "Dr. Boede"
   );
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
