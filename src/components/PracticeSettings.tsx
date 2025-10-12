@@ -100,7 +100,7 @@ export const PracticeSettings = () => {
   const currentLogo = logoPreview || configuration?.logo_url || logoPlaceholder;
   const hasChanges =
     selectedFile !== null ||
-    dentistName !== (configuration?.dentist_name || "Dr. Leue");
+    dentistName !== (configuration?.dentist_name || "Dr. Boede");
 
   if (loading) {
     return (
@@ -176,7 +176,7 @@ export const PracticeSettings = () => {
               id="dentist-name"
               value={dentistName}
               onChange={(e) => setDentistName(e.target.value)}
-              placeholder="Dr. Leue"
+              placeholder="Dr. Boede"
               disabled={saving}
             />
           </div>
