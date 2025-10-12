@@ -7,6 +7,8 @@ interface SystemConfiguration {
   webhook_url: string | null;
   email_template_first: string | null;
   email_template_reminder: string | null;
+  dentist_name: string | null;
+  logo_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -40,7 +42,7 @@ export const useConfiguration = () => {
     }
   };
 
-  const updateConfiguration = async (updates: Partial<Pick<SystemConfiguration, 'webhook_url' | 'email_template_first' | 'email_template_reminder'>>) => {
+  const updateConfiguration = async (updates: Partial<Pick<SystemConfiguration, 'webhook_url' | 'email_template_first' | 'email_template_reminder' | 'dentist_name' | 'logo_url'>>) => {
     try {
       if (!configuration) {
         // Create new configuration if none exists
