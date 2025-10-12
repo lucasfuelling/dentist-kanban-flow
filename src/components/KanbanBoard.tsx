@@ -65,7 +65,7 @@ export function KanbanBoard({
   } | null>(null);
 
   const currentLogo = configuration?.logo_url || logoPlaceholder;
-  const practiceName = configuration?.dentist_name || "Dr. Leue";
+  const practiceName = configuration?.dentist_name || "Dr. Boede";
 
   const sortPatients = (patientList: Patient[]) => {
     return [...patientList].sort((a, b) => {
@@ -248,7 +248,14 @@ export function KanbanBoard({
                                       : ""
                                   }`}
                                 >
-                                  <PatientCard patient={patient} onUpdateNotes={onUpdateNotes} onIncrementEmailCount={onIncrementEmailCount} onMovePatient={onMovePatient} />
+                                  <PatientCard
+                                    patient={patient}
+                                    onUpdateNotes={onUpdateNotes}
+                                    onIncrementEmailCount={
+                                      onIncrementEmailCount
+                                    }
+                                    onMovePatient={onMovePatient}
+                                  />
                                 </div>
                               )}
                             </Draggable>
@@ -296,7 +303,14 @@ export function KanbanBoard({
                                       : ""
                                   }`}
                                 >
-                                  <PatientCard patient={patient} onUpdateNotes={onUpdateNotes} onIncrementEmailCount={onIncrementEmailCount} onMovePatient={onMovePatient} />
+                                  <PatientCard
+                                    patient={patient}
+                                    onUpdateNotes={onUpdateNotes}
+                                    onIncrementEmailCount={
+                                      onIncrementEmailCount
+                                    }
+                                    onMovePatient={onMovePatient}
+                                  />
                                 </div>
                               )}
                             </Draggable>
