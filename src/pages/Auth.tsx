@@ -63,7 +63,7 @@ const Auth = () => {
             Kostenvoranschlag System
           </CardTitle>
           <CardDescription className="text-center">
-            Zahnarztpraxis Dr. Leue
+            Zahnarztpraxis
           </CardDescription>
         </CardHeader>
         <CardContent>
