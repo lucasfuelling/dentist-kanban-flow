@@ -20,6 +20,23 @@ import { useUserManagement } from "@/hooks/useUserManagement";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { z } from "zod";
+
+const userSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email("Ungültige E-Mail-Adresse")
+    .max(255, "E-Mail darf maximal 255 Zeichen lang sein"),
+  password: z
+    .string()
+    .min(8, "Passwort muss mindestens 8 Zeichen lang sein")
+    .max(128, "Passwort darf maximal 128 Zeichen lang sein")
+    .regex(/[A-Z]/, "Passwort muss mindestens einen Großbuchstaben enthalten")
+    .regex(/[a-z]/, "Passwort muss mindestens einen Kleinbuchstaben enthalten")
+    .regex(/[0-9]/, "Passwort muss mindestens eine Zahl enthalten"),
+  role: z.enum(["user", "admin"]),
+});
 
 export const UserManagement = () => {
   const { users, loading, createUser } = useUserManagement();
@@ -31,21 +48,19 @@ export const UserManagement = () => {
   const [creating, setCreating] = useState(false);
 
   const handleCreateUser = async () => {
-    if (!newUserEmail || !newUserPassword) {
-      toast({
-        variant: "destructive",
-        title: "Missing information",
-        description: "Please provide both email and password.",
-      });
-      return;
-    }
-
+    // Validate inputs
     try {
+      const validated = userSchema.parse({
+        email: newUserEmail,
+        password: newUserPassword,
+        role: newUserRole,
+      });
+
       setCreating(true);
       const { user, error } = await createUser(
-        newUserEmail,
-        newUserPassword,
-        newUserRole
+        validated.email,
+        validated.password,
+        validated.role
       );
 
       if (error) {
@@ -54,8 +69,8 @@ export const UserManagement = () => {
 
       if (user) {
         toast({
-          title: "User created",
-          description: `User ${newUserEmail} has been created successfully.`,
+          title: "Benutzer erstellt",
+          description: `Benutzer wurde erfolgreich erstellt.`,
         });
 
         setNewUserEmail("");
@@ -63,10 +78,19 @@ export const UserManagement = () => {
         setNewUserRole("user");
       }
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          variant: "destructive",
+          title: "Validierungsfehler",
+          description: error.errors[0].message,
+        });
+        return;
+      }
+      
       toast({
         variant: "destructive",
-        title: "Error creating user",
-        description: error.message || "There was a problem creating the user.",
+        title: "Fehler beim Erstellen",
+        description: error.message || "Beim Erstellen des Benutzers ist ein Fehler aufgetreten.",
       });
     } finally {
       setCreating(false);

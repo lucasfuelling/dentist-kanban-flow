@@ -10,6 +10,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, X, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const patientSchema = z.object({
+  firstName: z
+    .string()
+    .trim()
+    .max(100, "Vorname darf maximal 100 Zeichen lang sein")
+    .optional(),
+  lastName: z
+    .string()
+    .trim()
+    .min(1, "Nachname ist erforderlich")
+    .max(100, "Nachname darf maximal 100 Zeichen lang sein"),
+  email: z
+    .string()
+    .trim()
+    .email("Ungültige E-Mail-Adresse")
+    .max(255, "E-Mail darf maximal 255 Zeichen lang sein")
+    .optional()
+    .or(z.literal("")),
+});
 
 interface PatientFormModalProps {
   isOpen: boolean;
@@ -62,23 +83,21 @@ export function PatientFormModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!lastName.trim()) {
-      toast({
-        title: "Name erforderlich",
-        description: "Bitte geben Sie den Nachnamen ein.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
+    // Validate inputs
     try {
+      const validated = patientSchema.parse({
+        firstName,
+        lastName,
+        email: email || "",
+      });
+
+      setIsSubmitting(true);
+
       await onSubmit({
-        name: firstName.trim()
-          ? `${firstName.trim()} ${lastName.trim()}`
-          : lastName.trim(),
-        email: email.trim() || undefined,
+        name: validated.firstName
+          ? `${validated.firstName} ${validated.lastName}`
+          : validated.lastName,
+        email: validated.email || undefined,
         pdfFile: pdfFile || undefined,
       });
 
@@ -94,6 +113,15 @@ export function PatientFormModal({
         description: "Der Patient wurde erfolgreich angelegt.",
       });
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validierungsfehler",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+      
       toast({
         title: "Fehler",
         description: "Beim Erstellen des Patienten ist ein Fehler aufgetreten.",
