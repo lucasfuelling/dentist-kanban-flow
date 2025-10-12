@@ -1,5 +1,11 @@
 import { useState, useRef } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +20,9 @@ export const PracticeSettings = () => {
   const { uploadLogo, deleteLogo, uploading } = usePracticeLogo();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [dentistName, setDentistName] = useState(configuration?.dentist_name || "Dr. Leue");
+  const [dentistName, setDentistName] = useState(
+    configuration?.dentist_name || "Dr. Leue"
+  );
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -54,8 +62,8 @@ export const PracticeSettings = () => {
 
       // Update configuration
       await updateConfiguration({
-        dentist_name: dentistName || "Dr. Leue",
-        logo_url: newLogoUrl || undefined
+        dentist_name: dentistName || "Dr. Boede",
+        logo_url: newLogoUrl || undefined,
       });
 
       toast.success("Einstellungen erfolgreich gespeichert");
@@ -77,7 +85,7 @@ export const PracticeSettings = () => {
       const deleted = await deleteLogo(configuration.logo_url);
       if (deleted) {
         await updateConfiguration({
-          logo_url: null as any
+          logo_url: null as any,
         });
         toast.success("Logo erfolgreich gelöscht");
       }
@@ -90,7 +98,9 @@ export const PracticeSettings = () => {
   };
 
   const currentLogo = logoPreview || configuration?.logo_url || logoPlaceholder;
-  const hasChanges = selectedFile !== null || dentistName !== (configuration?.dentist_name || "Dr. Leue");
+  const hasChanges =
+    selectedFile !== null ||
+    dentistName !== (configuration?.dentist_name || "Dr. Leue");
 
   if (loading) {
     return (
@@ -157,9 +167,7 @@ export const PracticeSettings = () => {
       <Card>
         <CardHeader>
           <CardTitle>Praxis Name</CardTitle>
-          <CardDescription>
-            Name des Zahnarztes oder der Praxis
-          </CardDescription>
+          <CardDescription>Name des Zahnarztes oder der Praxis</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
