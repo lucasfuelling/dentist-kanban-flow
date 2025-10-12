@@ -20,7 +20,8 @@ import { PatientFormModal } from "./PatientFormModal";
 import { ArchiveBox } from "./ArchiveBox";
 import { DeleteArchivedDialog } from "./DeleteArchivedDialog";
 import { Patient } from "@/types/patient";
-import logo from "@/assets/logo.png";
+import { useConfiguration } from "@/hooks/useConfiguration";
+import logoPlaceholder from "@/assets/logo.png";
 
 interface KanbanBoardProps {
   patients: Patient[];
@@ -53,6 +54,7 @@ export function KanbanBoard({
   onIncrementEmailCount,
   onDeleteArchived,
 }: KanbanBoardProps) {
+  const { configuration } = useConfiguration();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<"date" | "name">("date");
@@ -61,6 +63,9 @@ export function KanbanBoard({
     prevStatus: Patient["status"];
     archiveType: "terminated" | "no_response";
   } | null>(null);
+
+  const currentLogo = configuration?.logo_url || logoPlaceholder;
+  const practiceName = configuration?.dentist_name || "Dr. Leue";
 
   const sortPatients = (patientList: Patient[]) => {
     return [...patientList].sort((a, b) => {
@@ -159,13 +164,13 @@ export function KanbanBoard({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <img
-                src={logo}
+                src={currentLogo}
                 alt="Logo"
                 className="h-16 w-16 object-contain rounded bg-white shadow"
               />
               <div>
                 <h1 className="lg:text-2xl text-xl font-bold text-foreground mb-2">
-                  Zahnarztpraxis Dr. Leue
+                  Zahnarztpraxis {practiceName}
                 </h1>
                 <p className="text-muted-foreground">
                   Kostenvoranschlag Übersicht

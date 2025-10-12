@@ -1,1 +1,4 @@
 project_id = "fjrdillreulrmtdtwnth"
+
+[functions.create-patient]
+verify_jwt = false
