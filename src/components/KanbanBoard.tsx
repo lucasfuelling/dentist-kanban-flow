@@ -54,7 +54,7 @@ export function KanbanBoard({
   onIncrementEmailCount,
   onDeleteArchived,
 }: KanbanBoardProps) {
-  const { configuration } = useConfiguration();
+  const { configuration, loading: configLoading } = useConfiguration();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<"date" | "name">("date");
@@ -170,7 +170,11 @@ export function KanbanBoard({
               />
               <div>
                 <h1 className="lg:text-2xl text-xl font-bold text-foreground mb-2">
-                  Zahnarztpraxis {practiceName}
+                  Zahnarztpraxis {configLoading ? (
+                    <span className="inline-block w-24 h-6 bg-muted animate-pulse rounded align-middle" />
+                  ) : (
+                    practiceName
+                  )}
                 </h1>
                 <p className="text-muted-foreground">
                   Kostenvoranschlag Übersicht
