@@ -60,6 +60,7 @@ export function KanbanBoard({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<"date" | "name">("date");
+  const [creatingPatient, setCreatingPatient] = useState(false);
   const [lastArchived, setLastArchived] = useState<{
     patient: Patient;
     prevStatus: Patient["status"];
@@ -158,9 +159,23 @@ export function KanbanBoard({
     }
   };
 
+  const handleCreatePatient = async (data: { name: string; email?: string; pdfFile?: File }) => {
+    setCreatingPatient(true);
+    try {
+      await onCreatePatient(data);
+      setIsFormOpen(false);
+    } finally {
+      // Reset after a brief delay to ensure drag state clears
+      setTimeout(() => setCreatingPatient(false), 100);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-6 overflow-hidden">
-      <DragDropContext onDragEnd={onDragEnd}>
+      <DragDropContext 
+        key={`dnd-${creatingPatient ? 'creating' : 'idle'}`}
+        onDragEnd={onDragEnd}
+      >
         {/* Header */}
         <header className="mb-8">
           <div className="flex items-center justify-between">
@@ -370,7 +385,7 @@ export function KanbanBoard({
       <PatientFormModal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
-        onSubmit={onCreatePatient}
+        onSubmit={handleCreatePatient}
       />
 
       <DeleteArchivedDialog
