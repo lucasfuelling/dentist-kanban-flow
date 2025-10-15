@@ -20,6 +20,7 @@ const Index = () => {
     deleteArchivedPatients,
     updatePatientNotes,
     incrementEmailSentCount,
+    sendEmailAndMovePatient,
   } = usePatients();
 
   const handleSignOut = async () => {
@@ -81,6 +82,7 @@ const Index = () => {
           onArchivePatient={archivePatient}
           onUpdateNotes={updatePatientNotes}
           onIncrementEmailCount={incrementEmailSentCount}
+          onSendEmailAndMove={sendEmailAndMovePatient}
           onDeleteArchived={deleteArchivedPatients}
         />
       </main>

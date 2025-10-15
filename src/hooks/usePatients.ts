@@ -530,6 +530,71 @@ export const usePatients = () => {
     [user?.id, patients]
   );
 
+  // Send email and move patient (combined operation to prevent UI flash)
+  const sendEmailAndMovePatient = useCallback(
+    async (patientId: string) => {
+      if (!user?.id) return;
+
+      // Find current patient
+      const currentPatient = patients.find((p) => p.id === patientId);
+      if (!currentPatient) return;
+
+      const newCount = (currentPatient.emailSentCount || 0) + 1;
+      const shouldMove = currentPatient.status === "sent";
+
+      // Optimistically update local state with both changes at once
+      const updatedPatient = {
+        ...currentPatient,
+        emailSentCount: newCount,
+        emailSentAt: new Date().toISOString(),
+        ...(shouldMove && {
+          status: "reminded" as PatientStatus,
+          movedAt: new Date().toISOString(),
+        }),
+      };
+
+      setPatients((prev) =>
+        prev.map((p) => (p.id === patientId ? updatedPatient : p))
+      );
+
+      try {
+        // Combine both updates into a single database operation
+        const updateData: any = {
+          email_sent_count: newCount,
+          email_sent_at: new Date().toISOString(),
+        };
+
+        if (shouldMove) {
+          updateData.status = "reminded";
+          updateData.date_reminded = new Date().toISOString();
+        }
+
+        const { error } = await supabase
+          .from("data")
+          .update(updateData)
+          .eq("patient_id", parseInt(patientId))
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+      } catch (error) {
+        console.error("Error sending email and moving patient:", error);
+
+        // Revert optimistic update on error
+        setPatients((prev) =>
+          prev.map((p) => (p.id === patientId ? currentPatient : p))
+        );
+
+        toast({
+          title: "Fehler beim Speichern",
+          description: "E-Mail-Status konnte nicht gespeichert werden.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    [user?.id, patients]
+  );
+
   return {
     patients,
     loading,
@@ -539,6 +604,7 @@ export const usePatients = () => {
     deleteArchivedPatients,
     updatePatientNotes,
     incrementEmailSentCount,
+    sendEmailAndMovePatient,
     refetch: fetchPatients,
   };
 };

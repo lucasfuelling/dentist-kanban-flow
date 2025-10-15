@@ -21,6 +21,7 @@ interface PatientCardProps {
   patient: Patient;
   onUpdateNotes: (patientId: string, notes: string) => void;
   onIncrementEmailCount?: (patientId: string) => void;
+  onSendEmailAndMove?: (patientId: string) => void;
   onMovePatient?: (patientId: string, newStatus: Patient["status"]) => void;
 }
 
@@ -28,6 +29,7 @@ export function PatientCard({
   patient,
   onUpdateNotes,
   onIncrementEmailCount,
+  onSendEmailAndMove,
   onMovePatient,
 }: PatientCardProps) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
@@ -117,14 +119,12 @@ export function PatientCard({
         description: `Email sent successfully to ${patient.email}`,
       });
 
-      // Increment email sent count in database
-      if (onIncrementEmailCount) {
-        onIncrementEmailCount(patient.id);
-      }
-
-      // Move patient to "reminded" status only if currently in "sent"
-      if (onMovePatient && patient.status === "sent") {
-        onMovePatient(patient.id, "reminded");
+      // Use combined operation to prevent UI flash
+      if (onSendEmailAndMove && patient.status === "sent") {
+        await onSendEmailAndMove(patient.id);
+      } else if (onIncrementEmailCount) {
+        // Fallback for reminder emails (already in "reminded" status)
+        await onIncrementEmailCount(patient.id);
       }
     } catch (error) {
       console.error("Error sending email:", error);

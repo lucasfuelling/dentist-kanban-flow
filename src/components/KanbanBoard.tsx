@@ -41,6 +41,7 @@ interface KanbanBoardProps {
   ) => Promise<void>;
   onUpdateNotes: (patientId: string, notes: string) => Promise<void>;
   onIncrementEmailCount?: (patientId: string) => Promise<void>;
+  onSendEmailAndMove?: (patientId: string) => Promise<void>;
   onDeleteArchived?: () => Promise<void>;
 }
 
@@ -52,6 +53,7 @@ export function KanbanBoard({
   onArchivePatient,
   onUpdateNotes,
   onIncrementEmailCount,
+  onSendEmailAndMove,
   onDeleteArchived,
 }: KanbanBoardProps) {
   const { configuration, loading: configLoading } = useConfiguration();
@@ -258,6 +260,7 @@ export function KanbanBoard({
                                     onIncrementEmailCount={
                                       onIncrementEmailCount
                                     }
+                                    onSendEmailAndMove={onSendEmailAndMove}
                                     onMovePatient={onMovePatient}
                                   />
                                 </div>
@@ -313,6 +316,7 @@ export function KanbanBoard({
                                     onIncrementEmailCount={
                                       onIncrementEmailCount
                                     }
+                                    onSendEmailAndMove={onSendEmailAndMove}
                                     onMovePatient={onMovePatient}
                                   />
                                 </div>
