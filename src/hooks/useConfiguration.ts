@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface SystemConfiguration {
   id: string;
@@ -15,35 +15,26 @@ interface SystemConfiguration {
 
 export const useConfiguration = () => {
   const { user } = useAuth();
-  const [configuration, setConfiguration] = useState<SystemConfiguration | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (user) {
-      fetchConfiguration();
-    }
-  }, [user]);
-
-  const fetchConfiguration = async () => {
-    try {
-      setLoading(true);
+  const { data: configuration, isLoading: loading } = useQuery({
+    queryKey: ['system-configuration'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('system_configurations')
         .select('*')
         .maybeSingle();
-
+      
       if (error) throw error;
-      setConfiguration(data);
-    } catch (error) {
-      console.error('Error fetching configuration:', error);
-      setConfiguration(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // Keep data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+  });
 
-  const updateConfiguration = async (updates: Partial<Pick<SystemConfiguration, 'webhook_url' | 'email_template_first' | 'email_template_reminder' | 'dentist_name' | 'logo_url'>>) => {
-    try {
+  const updateMutation = useMutation({
+    mutationFn: async (updates: Partial<Pick<SystemConfiguration, 'webhook_url' | 'email_template_first' | 'email_template_reminder' | 'dentist_name' | 'logo_url'>>) => {
       if (!configuration) {
         // Create new configuration if none exists
         const { data, error } = await supabase
@@ -53,7 +44,7 @@ export const useConfiguration = () => {
           .single();
 
         if (error) throw error;
-        setConfiguration(data);
+        return data;
       } else {
         // Update existing configuration
         const { data, error } = await supabase
@@ -64,18 +55,21 @@ export const useConfiguration = () => {
           .single();
 
         if (error) throw error;
-        setConfiguration(data);
+        return data;
       }
-    } catch (error) {
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['system-configuration'], data);
+    },
+    onError: (error) => {
       console.error('Error updating configuration:', error);
-      throw error;
     }
-  };
+  });
 
   return {
-    configuration,
+    configuration: configuration ?? null,
     loading,
-    updateConfiguration,
-    refetch: fetchConfiguration
+    updateConfiguration: updateMutation.mutateAsync,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['system-configuration'] })
   };
 };
