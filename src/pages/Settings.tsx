@@ -6,9 +6,11 @@ import { PracticeSettings } from "@/components/PracticeSettings";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Settings as SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useRoles } from "@/hooks/useRoles";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { isAdmin } = useRoles();
 
   return (
     <div className="min-h-screen bg-background">
@@ -35,29 +37,35 @@ const Settings = () => {
 
       {/* Main Content */}
       <main className="container mx-auto p-4">
-        <Tabs defaultValue="practice" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="practice">Praxis</TabsTrigger>
+        <Tabs defaultValue="email" className="space-y-6">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-1'}`}>
+            {isAdmin && <TabsTrigger value="practice">Praxis</TabsTrigger>}
             <TabsTrigger value="email">Email Vorlage</TabsTrigger>
-            <TabsTrigger value="users">User Management</TabsTrigger>
-            <TabsTrigger value="dsgvo">DSGVO</TabsTrigger>
+            {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="dsgvo">DSGVO</TabsTrigger>}
           </TabsList>
 
-          <TabsContent value="practice" className="space-y-6">
-            <PracticeSettings />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="practice" className="space-y-6">
+              <PracticeSettings />
+            </TabsContent>
+          )}
 
           <TabsContent value="email" className="space-y-6">
             <EmailConfiguration />
           </TabsContent>
 
-          <TabsContent value="users" className="space-y-6">
-            <UserManagement />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="users" className="space-y-6">
+              <UserManagement />
+            </TabsContent>
+          )}
 
-          <TabsContent value="dsgvo" className="space-y-6">
-            <DsgvoManagement />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="dsgvo" className="space-y-6">
+              <DsgvoManagement />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>
