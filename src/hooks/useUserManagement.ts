@@ -82,10 +82,35 @@ export const useUserManagement = () => {
     }
   };
 
+  const deleteUser = async (userId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      // Refresh the users list
+      await fetchUsers();
+
+      return { success: true, error: null };
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      return { success: false, error };
+    }
+  };
+
   return {
     users,
     loading,
     createUser,
+    deleteUser,
     refetch: fetchUsers
   };
 };

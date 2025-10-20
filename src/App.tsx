@@ -33,9 +33,9 @@ const App = () => (
             <Route 
               path="/settings" 
               element={
-                <AdminRoute>
+                <ProtectedRoute>
                   <Settings />
-                </AdminRoute>
+                </ProtectedRoute>
               } 
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

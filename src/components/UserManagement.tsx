@@ -18,8 +18,19 @@ import {
 } from "@/components/ui/select";
 import { useUserManagement } from "@/hooks/useUserManagement";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Users } from "lucide-react";
+import { Loader2, Plus, Users, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useRoles } from "@/hooks/useRoles";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { z } from "zod";
 
 const userSchema = z.object({
@@ -39,13 +50,16 @@ const userSchema = z.object({
 });
 
 export const UserManagement = () => {
-  const { users, loading, createUser } = useUserManagement();
+  const { users, loading, createUser, deleteUser } = useUserManagement();
+  const { isAdmin } = useRoles();
   const { toast } = useToast();
 
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserRole, setNewUserRole] = useState("user");
   const [creating, setCreating] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleCreateUser = async () => {
     // Validate inputs
@@ -97,17 +111,44 @@ export const UserManagement = () => {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    setDeleting(true);
+    try {
+      const { error } = await deleteUser(userToDelete);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Benutzer gelöscht",
+        description: "Benutzer wurde erfolgreich gelöscht.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Fehler beim Löschen",
+        description: error.message || "Beim Löschen des Benutzers ist ein Fehler aufgetreten.",
+      });
+    } finally {
+      setDeleting(false);
+      setUserToDelete(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Neuen Benutzer anlegen
-          </CardTitle>
-          <CardDescription>Lege einen neuen Benutzer.</CardDescription>
-        </CardHeader>
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Neuen Benutzer anlegen
+            </CardTitle>
+            <CardDescription>Lege einen neuen Benutzer.</CardDescription>
+          </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -156,6 +197,7 @@ export const UserManagement = () => {
           </Button>
         </CardContent>
       </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -176,36 +218,74 @@ export const UserManagement = () => {
             </p>
           ) : (
             <div className="space-y-4">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <p className="font-medium">{user.email}</p>
-                      <p className="text-sm text-muted-foreground">
-                        ID: {user.id.slice(0, 8)}...
-                      </p>
+              {users.map((user) => {
+                const isUserAdmin = user.roles?.includes("admin");
+                return (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p className="font-medium">{user.email}</p>
+                        <p className="text-sm text-muted-foreground">
+                          ID: {user.id.slice(0, 8)}...
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-1">
+                        {user.roles?.map((role) => (
+                          <Badge
+                            key={role}
+                            variant={role === "admin" ? "default" : "secondary"}
+                          >
+                            {role}
+                          </Badge>
+                        ))}
+                      </div>
+                      
+                      {isAdmin && !isUserAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setUserToDelete(user.id)}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
-
-                  <div className="flex gap-1">
-                    {user.roles?.map((role) => (
-                      <Badge
-                        key={role}
-                        variant={role === "admin" ? "default" : "secondary"}
-                      >
-                        {role}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Benutzer löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Diese Aktion kann nicht rückgängig gemacht werden. Der Benutzer und alle zugehörigen Daten werden permanent gelöscht.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
