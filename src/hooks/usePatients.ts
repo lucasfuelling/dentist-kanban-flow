@@ -53,12 +53,34 @@ const generatePdfUrl = async (filePath: string): Promise<string | undefined> => 
 // Helper function to deduplicate patients array
 const deduplicatePatients = (patients: Patient[]): Patient[] => {
   const seen = new Map<string, Patient>();
+  const seenByData = new Map<string, Patient>();
+  
   for (const patient of patients) {
-    // Prefer real IDs over temp IDs
-    if (!seen.has(patient.id) || !patient.id.startsWith('temp-')) {
+    // Create a data signature for matching temp patients with real ones
+    const dataKey = `${patient.name}|${patient.email || 'no-email'}`;
+    
+    // If we've seen this exact data before, prefer the real ID
+    if (seenByData.has(dataKey)) {
+      const existing = seenByData.get(dataKey)!;
+      // Keep the one with a real ID (not temp)
+      if (patient.id.startsWith('temp-') && !existing.id.startsWith('temp-')) {
+        continue; // Skip temp, keep real
+      }
+      if (!patient.id.startsWith('temp-') && existing.id.startsWith('temp-')) {
+        seen.delete(existing.id); // Remove temp
+        seenByData.set(dataKey, patient);
+        seen.set(patient.id, patient);
+        continue;
+      }
+    }
+    
+    // Normal duplicate check by ID
+    if (!seen.has(patient.id)) {
       seen.set(patient.id, patient);
+      seenByData.set(dataKey, patient);
     }
   }
+  
   return Array.from(seen.values());
 };
 
@@ -199,7 +221,7 @@ export const usePatients = () => {
         setTimeout(() => {
           optimisticOperations.current.delete(optimisticPatient.id);
           optimisticOperations.current.delete(realPatient.id);
-        }, 1000);
+        }, 500);
       } catch (error) {
         console.error("Error creating patient:", error);
         // Remove optimistic patient on error
@@ -349,6 +371,22 @@ export const usePatients = () => {
           }
 
           setPatients((prev) => {
+            // Also skip if we have a temp patient with matching data
+            const hasTempWithSameData = prev.some(p => 
+              p.id.startsWith('temp-') && 
+              p.name === newPatient.name && 
+              p.email === newPatient.email
+            );
+
+            if (hasTempWithSameData) {
+              console.log('Skipping real-time INSERT - temp patient exists with same data');
+              // Replace the temp with real
+              return prev.map(p => 
+                (p.id.startsWith('temp-') && p.name === newPatient.name && p.email === newPatient.email)
+                  ? newPatient 
+                  : p
+              );
+            }
             // Check if this patient already exists (by ID or matching data for temp patients)
             const existingIndex = prev.findIndex(p => 
               p.id === newPatient.id || 
