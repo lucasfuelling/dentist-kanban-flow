@@ -124,7 +124,6 @@ export const usePatients = () => {
       const { data, error } = await supabase
         .from("data")
         .select("*")
-        .eq("user_id", user.id)
         .neq("archive_status", "archived")
         .order("date_created", { ascending: true });
 
@@ -275,8 +274,7 @@ export const usePatients = () => {
         const { error } = await supabase
           .from("data")
           .update(updateData)
-          .eq("patient_id", parseInt(patientId))
-          .eq("user_id", user.id);
+          .eq("patient_id", parseInt(patientId));
 
         if (error) throw error;
       } catch (error) {
@@ -323,8 +321,7 @@ export const usePatients = () => {
             status: archiveType,
             date_archived: new Date().toISOString(),
           }) // Type assertion to work around outdated generated types
-          .eq("patient_id", parseInt(patientId))
-          .eq("user_id", user.id);
+          .eq("patient_id", parseInt(patientId));
 
         if (error) throw error;
       } catch (error) {
@@ -357,7 +354,6 @@ export const usePatients = () => {
           event: "INSERT",
           schema: "public",
           table: "data",
-          filter: `user_id=eq.${user.id}`,
         },
         async (payload) => {
           console.log("Real-time INSERT:", payload);
@@ -413,7 +409,6 @@ export const usePatients = () => {
           event: "UPDATE",
           schema: "public",
           table: "data",
-          filter: `user_id=eq.${user.id}`,
         },
         async (payload) => {
           console.log("Real-time UPDATE:", payload);
@@ -430,7 +425,6 @@ export const usePatients = () => {
           event: "DELETE",
           schema: "public",
           table: "data",
-          filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           console.log("Real-time DELETE:", payload);
@@ -492,7 +486,6 @@ export const usePatients = () => {
       const { error } = await supabase
         .from('data')
         .delete()
-        .eq('user_id', user.id)
         .in('status', ['terminated', 'no_response']);
 
       if (error) throw error;
@@ -538,8 +531,7 @@ export const usePatients = () => {
         const { error } = await supabase
           .from("data")
           .update({ notes: notes.trim() || null } as any)
-          .eq("patient_id", parseInt(patientId))
-          .eq("user_id", user.id);
+          .eq("patient_id", parseInt(patientId));
 
         if (error) throw error;
       } catch (error) {
@@ -590,8 +582,7 @@ export const usePatients = () => {
             email_sent_count: newCount,
             email_sent_at: new Date().toISOString(),
           } as any)
-          .eq("patient_id", parseInt(patientId))
-          .eq("user_id", user.id);
+          .eq("patient_id", parseInt(patientId));
 
         if (error) throw error;
       } catch (error) {
@@ -655,8 +646,7 @@ export const usePatients = () => {
         const { error } = await supabase
           .from("data")
           .update(updateData)
-          .eq("patient_id", parseInt(patientId))
-          .eq("user_id", user.id);
+          .eq("patient_id", parseInt(patientId));
 
         if (error) throw error;
       } catch (error) {
