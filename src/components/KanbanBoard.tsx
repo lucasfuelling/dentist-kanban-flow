@@ -170,7 +170,8 @@ export function KanbanBoard({
               />
               <div>
                 <h1 className="lg:text-2xl text-xl font-bold text-foreground mb-2">
-                  Zahnarztpraxis {configLoading ? (
+                  Zahnarztpraxis{" "}
+                  {configLoading ? (
                     <span className="inline-block w-24 h-6 bg-muted animate-pulse rounded align-middle" />
                   ) : (
                     practiceName
@@ -231,7 +232,7 @@ export function KanbanBoard({
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`space-y-3 min-h-[200px] transition-colors ${
+                          className={`space-y-3 min-h-[200px] pb-20 transition-colors ${
                             snapshot.isDraggingOver ? "bg-accent/20" : ""
                           }`}
                         >
@@ -286,7 +287,7 @@ export function KanbanBoard({
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`space-y-3 min-h-[200px] transition-colors ${
+                          className={`space-y-3 min-h-[200px] pb-20 transition-colors ${
                             snapshot.isDraggingOver ? "bg-accent/20" : ""
                           }`}
                         >
