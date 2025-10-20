@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
@@ -50,6 +50,18 @@ const generatePdfUrl = async (filePath: string): Promise<string | undefined> => 
   }
 };
 
+// Helper function to deduplicate patients array
+const deduplicatePatients = (patients: Patient[]): Patient[] => {
+  const seen = new Map<string, Patient>();
+  for (const patient of patients) {
+    // Prefer real IDs over temp IDs
+    if (!seen.has(patient.id) || !patient.id.startsWith('temp-')) {
+      seen.set(patient.id, patient);
+    }
+  }
+  return Array.from(seen.values());
+};
+
 // Helper function to format database record to Patient type
 const formatPatient = async (record: PatientRecord): Promise<Patient> => {
   const fullName = record.first_name
@@ -80,6 +92,7 @@ export const usePatients = () => {
   const { user } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const optimisticOperations = useRef<Set<string>>(new Set());
 
   // Fetch initial data
   const fetchPatients = useCallback(async () => {
@@ -123,8 +136,12 @@ export const usePatients = () => {
         createdAt: new Date().toISOString(),
       };
 
+      // Track this optimistic operation
+      optimisticOperations.current.add(optimisticPatient.id);
+      console.log('Creating patient, current patients:', patients.length);
+
       // Optimistically add to state
-      setPatients((prev) => [...prev, optimisticPatient]);
+      setPatients((prev) => deduplicatePatients([...prev, optimisticPatient]));
 
       try {
         let pdfFilePath: string | undefined;
@@ -168,15 +185,30 @@ export const usePatients = () => {
 
         // Replace optimistic patient with real data immediately
         const realPatient = await formatPatient(data);
+        
+        // Track the real ID too
+        optimisticOperations.current.add(realPatient.id);
+        
         setPatients((prev) =>
-          prev.map((p) => (p.id === optimisticPatient.id ? realPatient : p))
+          deduplicatePatients(prev.map((p) => (p.id === optimisticPatient.id ? realPatient : p)))
         );
+        
+        console.log('After creation, patient count:', patients.length + 1);
+        
+        // Remove from tracking after a short delay to handle race conditions
+        setTimeout(() => {
+          optimisticOperations.current.delete(optimisticPatient.id);
+          optimisticOperations.current.delete(realPatient.id);
+        }, 1000);
       } catch (error) {
         console.error("Error creating patient:", error);
         // Remove optimistic patient on error
         setPatients((prev) =>
           prev.filter((p) => p.id !== optimisticPatient.id)
         );
+        
+        // Clean up tracking
+        optimisticOperations.current.delete(optimisticPatient.id);
 
         toast({
           title: "Fehler beim Erstellen",
@@ -310,9 +342,21 @@ export const usePatients = () => {
           const newPatient = await formatPatient(payload.new);
           console.log("Formatted new patient:", newPatient);
 
+          // Skip if this is from an optimistic operation we're tracking
+          if (optimisticOperations.current.has(newPatient.id)) {
+            console.log('Skipping real-time INSERT - tracked optimistic operation:', newPatient.id);
+            return;
+          }
+
           setPatients((prev) => {
-            // Check if this patient already exists (from optimistic update)
-            const existingIndex = prev.findIndex((p) => p.id === newPatient.id);
+            // Check if this patient already exists (by ID or matching data for temp patients)
+            const existingIndex = prev.findIndex(p => 
+              p.id === newPatient.id || 
+              (p.id.startsWith('temp-') && p.name === newPatient.name && p.email === newPatient.email)
+            );
+            
+            console.log('Real-time INSERT received, existing patient?', existingIndex >= 0);
+            
             if (existingIndex >= 0) {
               // Update existing patient with real data
               return prev.map((p, index) =>
@@ -320,7 +364,8 @@ export const usePatients = () => {
               );
             }
             // Add new patient if it doesn't exist
-            return [...prev, newPatient];
+            console.log('After add, patient count:', prev.length + 1);
+            return deduplicatePatients([...prev, newPatient]);
           });
         }
       )
@@ -530,6 +575,71 @@ export const usePatients = () => {
     [user?.id, patients]
   );
 
+  // Send email and move patient (combined operation to prevent UI flash)
+  const sendEmailAndMovePatient = useCallback(
+    async (patientId: string) => {
+      if (!user?.id) return;
+
+      // Find current patient
+      const currentPatient = patients.find((p) => p.id === patientId);
+      if (!currentPatient) return;
+
+      const newCount = (currentPatient.emailSentCount || 0) + 1;
+      const shouldMove = currentPatient.status === "sent";
+
+      // Optimistically update local state with both changes at once
+      const updatedPatient = {
+        ...currentPatient,
+        emailSentCount: newCount,
+        emailSentAt: new Date().toISOString(),
+        ...(shouldMove && {
+          status: "reminded" as PatientStatus,
+          movedAt: new Date().toISOString(),
+        }),
+      };
+
+      setPatients((prev) =>
+        prev.map((p) => (p.id === patientId ? updatedPatient : p))
+      );
+
+      try {
+        // Combine both updates into a single database operation
+        const updateData: any = {
+          email_sent_count: newCount,
+          email_sent_at: new Date().toISOString(),
+        };
+
+        if (shouldMove) {
+          updateData.status = "reminded";
+          updateData.date_reminded = new Date().toISOString();
+        }
+
+        const { error } = await supabase
+          .from("data")
+          .update(updateData)
+          .eq("patient_id", parseInt(patientId))
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+      } catch (error) {
+        console.error("Error sending email and moving patient:", error);
+
+        // Revert optimistic update on error
+        setPatients((prev) =>
+          prev.map((p) => (p.id === patientId ? currentPatient : p))
+        );
+
+        toast({
+          title: "Fehler beim Speichern",
+          description: "E-Mail-Status konnte nicht gespeichert werden.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    [user?.id, patients]
+  );
+
   return {
     patients,
     loading,
@@ -539,6 +649,7 @@ export const usePatients = () => {
     deleteArchivedPatients,
     updatePatientNotes,
     incrementEmailSentCount,
+    sendEmailAndMovePatient,
     refetch: fetchPatients,
   };
 };

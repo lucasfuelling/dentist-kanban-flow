@@ -5,6 +5,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting: Track request counts per IP
+const requestCounts = new Map<string, { count: number; resetTime: number }>();
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const record = requestCounts.get(identifier);
+  
+  // Reset if window expired
+  if (!record || now > record.resetTime) {
+    requestCounts.set(identifier, { count: 1, resetTime: now + 60000 }); // 1 minute window
+    return true;
+  }
+  
+  // Check if limit exceeded
+  if (record.count >= 10) { // Max 10 requests per minute
+    return false;
+  }
+  
+  // Increment counter
+  record.count++;
+  return true;
+}
+
 interface CreatePatientRequest {
   firstName?: string;
   lastName: string;
@@ -23,6 +46,19 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Rate limiting check
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown';
+    
+    if (!checkRateLimit(clientIp)) {
+      console.error(`Rate limit exceeded for IP: ${clientIp}`);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Rate limit exceeded. Maximum 10 requests per minute. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
