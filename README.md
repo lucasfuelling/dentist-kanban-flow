@@ -1,33 +1,31 @@
-# Welcome to your Lovable project
+# Welcome to Boedefuelling's KV-APP
 
-## Project info
+## Installation
 
-**URL**: https://lovable.dev/projects/0ef69d3a-90de-499e-b824-40c4e9d6d838
+**What we need - overview**
 
-## How can I edit this code?
+- KV-APP (this repository)
+- N8N
+- Supabase
+- [Docker for Windows](https://docs.docker.com/desktop/setup/install/windows-install/)
+- [Visual Studio Code](https://code.visualstudio.com/docs/setup/windows#_install-vs-code-on-windows)
+- [Node.js & npm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-There are several ways of editing your application.
+**Containerized approach**
 
-**Use Lovable**
+We will put the KV-APP into a Docker image.
+n8n and supabase already have Docker images. These three Docker images then communicate within a Docker network.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0ef69d3a-90de-499e-b824-40c4e9d6d838) and start prompting.
+## Create KV-APP docker image and push it to Docker Hub
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+**Open VS Code & Clone Repo**
 
 ```sh
 # Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+git clone https://github.com/lucasfuelling/dentist-kanban-flow.git
 
 # Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+cd dentist-kanban-flow
 
 # Step 3: Install the necessary dependencies.
 npm i
@@ -36,19 +34,26 @@ npm i
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+**Build Docker image**
+Open your terminal in the same directory as your Dockerfile and run:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+docker build -t kv-app .
+```
 
-**Use GitHub Codespaces**
+After the image is built, you can test run a container from it:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```sh
+docker run -p 8080:80 kv-app
+```
+
+This command maps port 8080 on your host machine to port 80 inside the container, where Nginx is serving the application. You can now access your kv-app in your browser at http://localhost:8080.
+You can stop the container in Docker.
+
+**Push the Docker image to Docker Hub**
+
+Open Docker and push the image to Docker Hub.
+Our Repo is https://hub.docker.com/search?q=lucasfuelling
 
 ## What technologies are used for this project?
 
