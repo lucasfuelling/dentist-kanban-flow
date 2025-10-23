@@ -35,10 +35,10 @@ npm run dev
 ```
 
 **Build Docker image**
-Open your terminal in the same directory as your Dockerfile and run:
+Open Docker for Windows. Open your terminal in the same directory as your Dockerfile and run:
 
 ```sh
-docker build -t kv-app .
+docker build -t lucasfuelling/kv-app:1.0 .
 ```
 
 After the image is built, you can test run a container from it:
